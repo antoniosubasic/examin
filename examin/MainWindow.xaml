@@ -6,6 +6,30 @@
         xmlns:local="clr-namespace:examin"
         mc:Ignorable="d"
         Title="examin" Height="700" Width="1200">
-    <StackPanel Name="Main">
+    <Window.Resources>
+        <Style TargetType="Label">
+            <Setter Property="Margin" Value="0 0 10 10"/>
+            <Setter Property="FontSize" Value="20" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Padding" Value="2 5"/>
+            <Setter Property="Margin" Value="0 0 0 10"/>
+        </Style>
+        <Style TargetType="PasswordBox">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Padding" Value="2 5"/>
+            <Setter Property="Margin" Value="0 0 0 10"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Padding" Value="2 5"/>
+            <Setter Property="Margin" Value="0 10 0 0"/>
+        </Style>
+    </Window.Resources>
+    <StackPanel Name="Main" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
     </StackPanel>
 </Window>
