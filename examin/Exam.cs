@@ -5,35 +5,35 @@ namespace examin
     internal class Exam
     {
         [JsonPropertyName("examType")]
-        internal string? Type { get; init; }
+        public string? Type { get; init; }
 
 
         [JsonPropertyName("name")]
-        internal string? Name { get; init; }
+        public string? Name { get; init; }
 
 
         [JsonPropertyName("examDate")]
-        internal DateOnly Date { get; init; }
+        public DateOnly Date { get; init; }
 
 
         [JsonPropertyName("startTime")]
-        internal TimeOnly StartTime { get; init; }
+        public TimeOnly StartTime { get; init; }
 
 
         [JsonPropertyName("endTime")]
-        internal TimeOnly EndTime { get; init; }
+        public TimeOnly EndTime { get; init; }
 
 
         [JsonPropertyName("subject")]
-        internal string? Subject { get; set; }
+        public string? Subject { get; set; }
 
 
         [JsonPropertyName("text")]
-        internal string? Description { get; init; }
+        public string? Description { get; init; }
 
 
         [JsonIgnore]
-        internal DateTimeOffset Start
+        public DateTimeOffset Start
         {
             get
             {
@@ -43,7 +43,7 @@ namespace examin
         }
 
         [JsonIgnore]
-        internal DateTimeOffset End
+        public DateTimeOffset End
         {
             get
             {
@@ -52,7 +52,7 @@ namespace examin
             }
         }
 
-        internal void TranslateSubject()
+        public void TranslateSubject()
         {
             // translate subjects here
             // for example:
