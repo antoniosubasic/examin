@@ -1,11 +1,9 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.IO;
 using System.Windows.Controls;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Input;
-using System.ComponentModel;
 using System.Globalization;
 
 namespace examin
@@ -118,9 +116,6 @@ namespace examin
 
                 var exams = await session.TryGetExams(from, to);
                 foreach (var exam in exams) { exam.TranslateSubject(); }
-
-                var examsString = string.Join("\n", exams.Select(exam => $"{exam.Description}"));
-                MessageBox.Show(examsString);
             }
             catch (FormatException)
             {

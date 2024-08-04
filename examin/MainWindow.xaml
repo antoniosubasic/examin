@@ -30,6 +30,5 @@
             <Setter Property="Margin" Value="0 10 0 0"/>
         </Style>
     </Window.Resources>
-    <StackPanel Name="Main" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10">
-    </StackPanel>
+    <StackPanel Name="Main" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10"></StackPanel>
 </Window>
