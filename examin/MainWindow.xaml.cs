@@ -135,7 +135,7 @@ namespace examin
                     Grid.SetColumn(saveExams, 0);
                     saveExams.Click += OnSaveExams;
 
-                    var pushExams = new Button { Content = "Push to Google Calendar", Padding = new(12.5, 7.5, 12.5, 7.5), Margin = new(5, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+                    var pushExams = new Button { Content = "Push to Google Calendar", Padding = new(12.5, 7.5, 12.5, 7.5), Margin = new(5, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, IsEnabled = !string.IsNullOrEmpty(_config.CalendarID.Trim()) };
                     Grid.SetColumn(pushExams, 1);
                     pushExams.Click += OnPushExams;
 
