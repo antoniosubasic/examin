@@ -1,8 +1,7 @@
 ﻿using System.Windows;
 using System.IO;
+using System.Reflection;
 using System.Windows.Controls;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Windows.Input;
 using System.Globalization;
 using System.Windows.Media;
@@ -13,11 +12,8 @@ namespace examin
 {
     public partial class MainWindow : Window
     {
-        private static readonly string _configDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "examin");
-        private static readonly string _configFile = Path.Combine(_configDirectory, "config.json");
         private Config _config;
         private IEnumerable<Exam>? _exams;
-        private string _dateTimeFormat = "dd.MM.yyyy";
 
         public MainWindow()
         {
@@ -34,15 +30,17 @@ namespace examin
                 Margin = new(20)
             };
 
-            if (!File.Exists(_configFile))
+            if (!File.Exists(Config.File))
             {
-                foreach (var field in typeof(Config).GetProperties())
+                var config = new Config();
+
+                foreach (var property in typeof(Config).GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
-                    var fieldName = new Label { Content = field.Name };
+                    var fieldName = new Label { Content = property.Name };
                     Grid.SetColumn(fieldName, 0);
 
-                    Control fieldInput = field.Name.ToLower() == "password" ? new PasswordBox() : new TextBox();
-                    fieldInput.Name = field.Name.Replace(" ", "").Replace("-", "");
+                    Control fieldInput = property.Name.Equals("password", StringComparison.CurrentCultureIgnoreCase) ? new PasswordBox() : new TextBox { Text = (string?)property.GetValue(config) };
+                    fieldInput.Name = property.Name;
                     fieldInput.MinWidth = 500;
                     Grid.SetColumn(fieldInput, 1);
 
@@ -64,18 +62,18 @@ namespace examin
             }
             else
             {
-                _config = JsonSerializer.Deserialize<Config>(File.ReadAllText(_configFile));
+                _config = Config.ReadFromFile();
 
                 var dateTimeFrom = new TextBox
                 {
-                    Text = new DateOnly(DateTime.Now.Year - (DateTime.Now.Month <= 8 ? 1 : 0), 9, 1).ToString(_dateTimeFormat),
+                    Text = new DateOnly(DateTime.Now.Year - (DateTime.Now.Month <= 8 ? 1 : 0), 9, 1).ToString(_config.DateFormat),
                     MinWidth = 200,
                     TextAlignment = TextAlignment.Center
                 };
 
                 var dateTimeTo = new TextBox
                 {
-                    Text = new DateOnly(DateTime.Now.Year + (DateTime.Now.Month <= 8 ? 0 : 1), 7, 8).ToString(_dateTimeFormat),
+                    Text = new DateOnly(DateTime.Now.Year + (DateTime.Now.Month <= 8 ? 0 : 1), 7, 8).ToString(_config.DateFormat),
                     MinWidth = 200,
                     TextAlignment = TextAlignment.Center
                 };
@@ -96,12 +94,10 @@ namespace examin
             try
             {
                 var config = Config.FromUIElementCollection(((StackPanel)Main.Content).Children);
+                config.WriteToFile();
 
-                Directory.CreateDirectory(_configDirectory);
-                File.WriteAllText(_configFile, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
-
-                Main.Content = null;
                 MessageBox.Show("Config generated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                OnLoaded(this, e);
             }
             catch (Exception ex)
             {
@@ -111,13 +107,15 @@ namespace examin
 
         private async Task OnFetchExams(TextBox dateTimeFrom, TextBox dateTimeTo, Button fetchExams)
         {
-            foreach (var element in new UIElement[] { dateTimeFrom, dateTimeTo, fetchExams }) { element.IsEnabled = false; }
+            UIElement[] elementsToDisable = { dateTimeFrom, dateTimeTo, fetchExams };
+
+            foreach (var element in elementsToDisable) { element.IsEnabled = false; }
             Mouse.OverrideCursor = Cursors.Wait;
 
             try
             {
-                var from = DateOnly.ParseExact(dateTimeFrom.Text, _dateTimeFormat, CultureInfo.InvariantCulture);
-                var to = DateOnly.ParseExact(dateTimeTo.Text, _dateTimeFormat, CultureInfo.InvariantCulture);
+                var from = DateOnly.ParseExact(dateTimeFrom.Text, _config.DateFormat, CultureInfo.InvariantCulture);
+                var to = DateOnly.ParseExact(dateTimeTo.Text, _config.DateFormat, CultureInfo.InvariantCulture);
 
                 var session = new WebuntisAPI.Session(_config);
                 await session.TryLogin();
@@ -217,7 +215,7 @@ namespace examin
             }
             finally
             {
-                foreach (var element in new UIElement[] { dateTimeFrom, dateTimeTo, fetchExams }) { element.IsEnabled = true; }
+                foreach (var element in elementsToDisable) { element.IsEnabled = true; }
                 Mouse.OverrideCursor = null;
             }
         }
@@ -266,57 +264,6 @@ namespace examin
         private void OnPushExams(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Push to Google Calendar");
-        }
-    }
-
-    public struct Config
-    {
-        [JsonPropertyName("Calendar ID")]
-        public string CalendarID { get; set; }
-
-        [JsonPropertyName("School-URL")]
-        public string SchoolURL { get; set; }
-
-        [JsonPropertyName("Schoolname")]
-        public string Schoolname { get; set; }
-
-        [JsonPropertyName("Username")]
-        public string Username { get; set; }
-
-        [JsonPropertyName("Password")]
-        public string Password { get; set; }
-
-        public static Config FromUIElementCollection(UIElementCollection UIElementCollection)
-        {
-            var config = new Config();
-
-            foreach (var element in UIElementCollection)
-            {
-                if (element is Grid gridElement)
-                {
-                    var inputField = gridElement.Children[1];
-
-                    if (inputField is TextBox textBox)
-                    {
-                        switch (textBox.Name)
-                        {
-                            case "CalendarID": config.CalendarID = textBox.Text; break;
-                            case "SchoolURL": config.SchoolURL = textBox.Text; break;
-                            case "Schoolname": config.Schoolname = textBox.Text; break;
-                            case "Username": config.Username = textBox.Text; break;
-                            case "Password": config.Password = textBox.Text; break;
-                        }
-                    }
-                    else if (inputField is PasswordBox passwordBox) { config.Password = passwordBox.Password; }
-                }
-            }
-
-            if (config.CalendarID is null or "" || config.SchoolURL is null or "" || config.Schoolname is null or "" || config.Username is null or "" || config.Password is null or "")
-            {
-                throw new Exception("One or more fields are empty!");
-            }
-
-            return config;
         }
     }
 }
