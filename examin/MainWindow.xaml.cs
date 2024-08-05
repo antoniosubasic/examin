@@ -7,17 +7,31 @@ using System.Globalization;
 using System.Windows.Media;
 using System.Windows.Controls.Primitives;
 using Microsoft.Win32;
+using examin.Config;
+using examin.WebuntisAPI;
+using System.Text.Json.Serialization;
+using System.Reflection.Metadata;
 
 namespace examin
 {
     public partial class MainWindow : Window
     {
-        private Config _config;
+        private Settings _settings;
+        private School _school;
+        private Session? _session;
         private IEnumerable<Exam>? _exams;
 
         public MainWindow()
         {
             InitializeComponent();
+
+            if (!File.Exists(Settings.File))
+            {
+                _settings = new();
+                _settings.WriteToFile();
+            }
+            else { _settings = Settings.ReadFromFile(); }
+
             Loaded += OnLoaded;
         }
 
@@ -30,79 +44,186 @@ namespace examin
                 Margin = new(20)
             };
 
-            if (!File.Exists(Config.File))
+            if (!File.Exists(School.File))
             {
-                var config = new Config();
+                var searchSchoolQuery = new TextBox { MinWidth = 500, Margin = new(0, 0, 5, 10) };
+                Grid.SetRow(searchSchoolQuery, 0);
+                Grid.SetColumn(searchSchoolQuery, 0);
 
-                foreach (var property in typeof(Config).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                var searchSchool = new Button { Content = "Search School", Margin = new(5, 0, 0, 10) };
+                Grid.SetRow(searchSchool, 0);
+                Grid.SetColumn(searchSchool, 1);
+
+                var schoolComboBox = new ComboBox { DisplayMemberPath = "Name", SelectedIndex = 0 };
+                Grid.SetRow(schoolComboBox, 1);
+                Grid.SetColumn(schoolComboBox, 0);
+
+                var selectSchool = new Button { Content = "Select School", Margin = new(5, 0, 0, 0), IsEnabled = false };
+                Grid.SetRow(selectSchool, 1);
+                Grid.SetColumn(selectSchool, 1);
+
+                searchSchoolQuery.KeyDown += async (sender, e) =>
                 {
-                    var fieldName = new Label { Content = property.Name };
-                    Grid.SetColumn(fieldName, 0);
-
-                    Control fieldInput = property.Name.Equals("password", StringComparison.CurrentCultureIgnoreCase) ? new PasswordBox() : new TextBox { Text = (string?)property.GetValue(config) };
-                    fieldInput.Name = property.Name;
-                    fieldInput.MinWidth = 500;
-                    Grid.SetColumn(fieldInput, 1);
-
-                    mainStackPanel.Children.Add(new Grid
+                    if (e.Key == Key.Enter)
                     {
-                        Children = { fieldName, fieldInput },
-                        ColumnDefinitions =
-                        {
-                            new ColumnDefinition { Width = new(1, GridUnitType.Auto) },
-                            new ColumnDefinition { Width = new(1, GridUnitType.Star) }
-                        }
-                    });
-                }
+                        await OnSearchSchool(schoolComboBox, searchSchoolQuery, searchSchool, selectSchool);
+                        searchSchoolQuery.Focus();
+                    }
+                };
+                searchSchool.Click += async (sender, e) => await OnSearchSchool(schoolComboBox, searchSchoolQuery, searchSchool, selectSchool);
+                selectSchool.Click += (sender, e) =>
+                {
+                    _school = (School)schoolComboBox.SelectedItem;
+                    _school.WriteToFile();
+                    OnLoaded(sender, e);
+                };
 
-                var generateConfigButton = new Button { Content = "Generate Config" };
-                generateConfigButton.Click += OnGenerateConfig;
-
-                mainStackPanel.Children.Add(generateConfigButton);
+                mainStackPanel.Children.Add(new Label { Content = "Search for School Name, City or Address", HorizontalAlignment = HorizontalAlignment.Center, Margin = new(0, 0, 0, 10) });
+                mainStackPanel.Children.Add(new Grid
+                {
+                    Children = { searchSchoolQuery, searchSchool, schoolComboBox, selectSchool },
+                    RowDefinitions =
+                    {
+                        new RowDefinition { Height = new(1, GridUnitType.Auto) },
+                        new RowDefinition { Height = new(1, GridUnitType.Auto) }
+                    },
+                    ColumnDefinitions =
+                    {
+                        new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                        new ColumnDefinition { Width = new(1, GridUnitType.Auto) }
+                    }
+                });
             }
             else
             {
-                _config = Config.ReadFromFile();
+                _school = School.ReadFromFile();
 
-                var dateTimeFrom = new TextBox
+                mainStackPanel.Children.Add(new Label { Content = _school.Name, HorizontalAlignment = HorizontalAlignment.Center, Margin = new(0, 0, 0, 10) });
+
+                var username = new TextBox { MinWidth = 500, Margin = new(0, 0, 0, 10), HorizontalContentAlignment = HorizontalAlignment.Center };
+                var password = new PasswordBox { MinWidth = 500, Margin = new(0, 0, 0, 20), HorizontalContentAlignment = HorizontalAlignment.Center };
+
+                var login = new Button { Content = "Login" };
+                login.Click += async (sender, e) =>
                 {
-                    Text = new DateOnly(DateTime.Now.Year - (DateTime.Now.Month <= 8 ? 1 : 0), 9, 1).ToString(_config.DateFormat),
-                    MinWidth = 200,
-                    TextAlignment = TextAlignment.Center
+                    username.IsEnabled = password.IsEnabled = login.IsEnabled = false;
+
+                    _session = new(_school, username.Text, password.Password);
+                    await _session.TryLogin();
+
+                    if (_session.LoggedIn)
+                    {
+                        #region Settings
+                        var settingsStackPanel = new StackPanel { Margin = new(0, 0, 50, 0) };
+                        Grid.SetColumn(settingsStackPanel, 0);
+
+                        foreach (var property in typeof(Settings).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.GetCustomAttribute<JsonIgnoreAttribute>() == null))
+                        {
+                            var fieldName = new Label { Content = property.Name };
+                            Grid.SetColumn(fieldName, 0);
+
+                            var fieldInput = new TextBox
+                            {
+                                Text = (string?)property.GetValue(_settings),
+                                Name = property.Name,
+                                Margin = new(15, 0, 0, 0)
+                            };
+                            Grid.SetColumn(fieldInput, 1);
+
+                            settingsStackPanel.Children.Add(new Grid
+                            {
+                                Children = { fieldName, fieldInput },
+                                ColumnDefinitions =
+                                {
+                                    new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                                    new ColumnDefinition { Width = new(1, GridUnitType.Auto) }
+                                },
+                                Margin = new(0, 0, 0, 10)
+                            });
+                        }
+
+                        var saveSettings = new Button { Content = "Save Settings" };
+                        saveSettings.Click += (sender, e) =>
+                        {
+                            settingsStackPanel.IsEnabled = false;
+                            _settings = Settings.FromUIElementCollection(settingsStackPanel.Children);
+                            _settings.WriteToFile();
+                            settingsStackPanel.IsEnabled = true;
+                        };
+                        settingsStackPanel.Children.Add(saveSettings);
+                        #endregion
+
+                        #region Fetch Exams
+                        var fetchExamsStackPanel = new StackPanel { Margin = new(50, 0, 0, 0) };
+                        Grid.SetColumn(fetchExamsStackPanel, 1);
+
+                        var dateTimeFrom = new TextBox
+                        {
+                            Text = new DateOnly(DateTime.Now.Year - (DateTime.Now.Month <= 8 ? 1 : 0), 9, 1).ToString(_settings.ShortDateFormat),
+                            MinWidth = 200,
+                            TextAlignment = TextAlignment.Center,
+                            Margin = new(0, 0, 0, 10)
+                        };
+
+                        var dateTimeTo = new TextBox
+                        {
+                            Text = new DateOnly(DateTime.Now.Year + (DateTime.Now.Month <= 8 ? 0 : 1), 7, 8).ToString(_settings.ShortDateFormat),
+                            MinWidth = 200,
+                            TextAlignment = TextAlignment.Center,
+                            Margin = new(0, 0, 0, 20)
+                        };
+
+                        var fetchExams = new Button { Content = "Fetch Exams" };
+                        fetchExams.Click += async (sender, e) => await OnFetchExams(dateTimeFrom, dateTimeTo, fetchExams);
+
+                        fetchExamsStackPanel.Children.Add(dateTimeFrom);
+                        fetchExamsStackPanel.Children.Add(dateTimeTo);
+                        fetchExamsStackPanel.Children.Add(fetchExams);
+                        #endregion
+
+                        mainStackPanel.Children.Clear();
+                        mainStackPanel.Children.Add(new Grid
+                        {
+                            Children = { settingsStackPanel, fetchExamsStackPanel },
+                            ColumnDefinitions =
+                            {
+                                new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                                new ColumnDefinition { Width = new(1, GridUnitType.Star) }
+                            }
+                        });
+                    }
+                    else
+                    {
+                        MessageBox.Show("Failed to login!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        username.IsEnabled = password.IsEnabled = login.IsEnabled = true;
+                    }
                 };
 
-                var dateTimeTo = new TextBox
-                {
-                    Text = new DateOnly(DateTime.Now.Year + (DateTime.Now.Month <= 8 ? 0 : 1), 7, 8).ToString(_config.DateFormat),
-                    MinWidth = 200,
-                    TextAlignment = TextAlignment.Center
-                };
-
-                var fetchExams = new Button { Content = "Fetch Exams" };
-                fetchExams.Click += async (sender, e) => await OnFetchExams(dateTimeFrom, dateTimeTo, fetchExams);
-
-                mainStackPanel.Children.Add(dateTimeFrom);
-                mainStackPanel.Children.Add(dateTimeTo);
-                mainStackPanel.Children.Add(fetchExams);
+                mainStackPanel.Children.Add(username);
+                mainStackPanel.Children.Add(password);
+                mainStackPanel.Children.Add(login);
             }
 
             Main.Content = mainStackPanel;
         }
 
-        private void OnGenerateConfig(object sender, RoutedEventArgs e)
+        private async Task OnSearchSchool(ComboBox schoolsComboBox, TextBox searchSchoolQuery, Button searchSchool, Button selectSchool)
         {
+            searchSchoolQuery.IsEnabled = searchSchool.IsEnabled = false;
+
             try
             {
-                var config = Config.FromUIElementCollection(((StackPanel)Main.Content).Children);
-                config.WriteToFile();
+                var schools = await Session.SearchSchool(searchSchoolQuery.Text);
 
-                MessageBox.Show("Config generated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                OnLoaded(this, e);
+                if (schools.Any())
+                {
+                    selectSchool.IsEnabled = true;
+                    schoolsComboBox.ItemsSource = schools;
+                }
+                else { MessageBox.Show("No schools found!", "Info", MessageBoxButton.OK, MessageBoxImage.Information); }
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+            finally { searchSchoolQuery.IsEnabled = searchSchool.IsEnabled = true; }
         }
 
         private async Task OnFetchExams(TextBox dateTimeFrom, TextBox dateTimeTo, Button fetchExams)
@@ -114,13 +235,10 @@ namespace examin
 
             try
             {
-                var from = DateOnly.ParseExact(dateTimeFrom.Text, _config.DateFormat, CultureInfo.InvariantCulture);
-                var to = DateOnly.ParseExact(dateTimeTo.Text, _config.DateFormat, CultureInfo.InvariantCulture);
+                var from = DateOnly.ParseExact(dateTimeFrom.Text, _settings.ShortDateFormat, CultureInfo.InvariantCulture);
+                var to = DateOnly.ParseExact(dateTimeTo.Text, _settings.ShortDateFormat, CultureInfo.InvariantCulture);
 
-                var session = new WebuntisAPI.Session(_config);
-                await session.TryLogin();
-
-                _exams = await session.TryGetExams(from, to);
+                _exams = await _session!.TryGetExams(from, to);
 
                 if (_exams.Any())
                 {
@@ -131,9 +249,9 @@ namespace examin
 
                     var saveExams = new Button { Content = "Save to File", Padding = new(12.5, 7.5, 12.5, 7.5), Margin = new(0, 0, 5, 0), HorizontalAlignment = HorizontalAlignment.Right };
                     Grid.SetColumn(saveExams, 0);
-                    saveExams.Click += OnSaveExams;
+                    saveExams.Click += (sender, e) => OnSaveExams(mainStackPanel.Children.Cast<UIElement>().Skip(1));
 
-                    var pushExams = new Button { Content = "Push to Google Calendar", Padding = new(12.5, 7.5, 12.5, 7.5), Margin = new(5, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Left, IsEnabled = !string.IsNullOrEmpty(_config.CalendarID.Trim()) };
+                    var pushExams = new Button { Content = "Push to Google Calendar", Padding = new(12.5, 7.5, 12.5, 7.5), Margin = new(5, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
                     Grid.SetColumn(pushExams, 1);
                     pushExams.Click += OnPushExams;
 
@@ -153,7 +271,7 @@ namespace examin
                         var exam = _exams.ElementAt(i);
                         exam.TranslateSubject();
 
-                        var subject = new Label { Content = exam.Subject, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new(0) };
+                        var subject = new Label { Content = exam.Subject, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
                         Grid.SetColumn(subject, 0);
 
                         var dateTime = new Grid
@@ -165,9 +283,9 @@ namespace examin
                             },
                             Margin = new(0)
                         };
-                        var date = new Label { Content = exam.Date.ToString("dd MMMM yyyy"), FontSize = 18, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new(0) };
+                        var date = new Label { Content = exam.Date.ToString(_settings.LongDateFormat), FontSize = 18, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
                         Grid.SetRow(date, 0);
-                        var time = new Label { Content = $"{exam.Start:HH:mm} - {exam.End:HH:mm}", FontSize = 16.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new(0) };
+                        var time = new Label { Content = $"{exam.Start.ToString(_settings.TimeFormat)} - {exam.End.ToString(_settings.TimeFormat)}", FontSize = 16.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
                         Grid.SetRow(time, 1);
                         dateTime.Children.Add(date);
                         dateTime.Children.Add(time);
@@ -220,10 +338,9 @@ namespace examin
             }
         }
 
-        private void OnSaveExams(object sender, RoutedEventArgs e)
+        // TODO: optimize by indexing exams instead of looping through _exams
+        private void OnSaveExams(IEnumerable<UIElement> examUIElements)
         {
-            var examUIElements = ((StackPanel)Main.Content).Children.Cast<UIElement>().Skip(1);
-
             var saveFileDialog = new SaveFileDialog
             {
                 FileName = "events.csv",
@@ -250,7 +367,7 @@ namespace examin
 
                         foreach (var exam in _exams!)
                         {
-                            if (exam.Subject == subject && exam.Date.ToString("dd MMMM yyyy") == date && $"{exam.Start:HH:mm} - {exam.End:HH:mm}" == time)
+                            if (exam.Subject == subject && exam.Date.ToString(_settings.LongDateFormat) == date && $"{exam.Start.ToString(_settings.TimeFormat)} - {exam.End.ToString(_settings.TimeFormat)}" == time)
                             {
                                 writer.WriteLine($"{exam.Subject},{exam.Description},{exam.Date.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture)},{exam.StartTime:h:mm tt},{exam.EndTime:h:mm tt}");
                                 break;
@@ -261,6 +378,7 @@ namespace examin
             }
         }
 
+        // TODO: implement asking for Calendar-ID + implement pushing to Google Calendar
         private void OnPushExams(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Push to Google Calendar");

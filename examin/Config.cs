@@ -3,81 +3,149 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows.Controls;
 
-namespace examin
+namespace examin.Config
 {
-    internal struct Config
+    internal static class Global
     {
-        [JsonPropertyName("CalendarID")]
-        public string CalendarID { get; set; }
-
-        [JsonPropertyName("SchoolURL")]
-        public string SchoolURL { get; set; }
-
-        [JsonPropertyName("Schoolname")]
-        public string Schoolname { get; set; }
-
-        [JsonPropertyName("Username")]
-        public string Username { get; set; }
-
-        [JsonPropertyName("Password")]
-        public string Password { get; set; }
-
-        [JsonIgnore]
-        private string _dateFormat { get; set; }
-
-        [JsonPropertyName("DateFormat")]
-        public string DateFormat
-        {
-            get => string.IsNullOrEmpty(_dateFormat) ? "dd.MM.yyyy" : _dateFormat;
-            set { _dateFormat = value; }
-        }
-
-        [JsonIgnore]
         public static string Directory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "examin");
+    }
+
+    internal struct School
+    {
+        [JsonPropertyName("server")]
+        public string ServerURL { get; set; }
+
+        [JsonPropertyName("displayName")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("loginName")]
+        public string LoginName { get; set; }
 
         [JsonIgnore]
-        public static string File => Path.Combine(Directory, "config.json");
+        public static string File => Path.Combine(Global.Directory, "school.json");
 
-        public static Config ReadFromFile() => JsonSerializer.Deserialize<Config>(System.IO.File.ReadAllText(File));
+        public static School ReadFromFile() => JsonSerializer.Deserialize<School>(System.IO.File.ReadAllText(File));
 
-        public void WriteToFile()
+        public readonly void WriteToFile()
         {
-            if (!System.IO.Directory.Exists(Directory)) { System.IO.Directory.CreateDirectory(Directory); }
-            System.IO.File.WriteAllText(File, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            if (!Directory.Exists(Global.Directory)) { Directory.CreateDirectory(Global.Directory); }
+            System.IO.File.WriteAllText(File, JsonSerializer.Serialize(this));
+        }
+    }
+
+    internal struct Settings
+    {
+        public Settings()
+        {
+            _shortDateFormat = "dd.MM.yyyy";
+            _longDateFormat = "dd MMMM yyyy";
+            _timeFormat = "HH:mm";
         }
 
-        public static Config FromUIElementCollection(UIElementCollection UIElementCollection)
+        [JsonIgnore]
+        private string _shortDateFormat { get; set; }
+
+        [JsonIgnore]
+        private string _longDateFormat { get; set; }
+
+        [JsonIgnore]
+        private string _timeFormat { get; set; }
+
+        [JsonPropertyName("shortDateFormat")]
+        public string ShortDateFormat
         {
-            var config = new Config();
+            readonly get => _shortDateFormat;
+            set
+            {
+                if (string.IsNullOrEmpty(value.Trim())) { _shortDateFormat = "dd.MM.yyyy"; }
+                else
+                {
+                    var date = new DateOnly();
+
+                    try
+                    {
+                        date.ToString(value);
+                        _shortDateFormat = value;
+                    }
+                    catch (FormatException) { _shortDateFormat = "dd.MM.yyyy"; }
+                }
+            }
+        }
+
+        [JsonPropertyName("longDateFormat")]
+        public string LongDateFormat
+        {
+            readonly get => _longDateFormat;
+            set
+            {
+                if (string.IsNullOrEmpty(value.Trim())) { _longDateFormat = "dd MMMM yyyy"; }
+                else
+                {
+                    var date = new DateOnly();
+
+                    try
+                    {
+                        date.ToString(value);
+                        _longDateFormat = value;
+                    }
+                    catch (FormatException) { _longDateFormat = "dd MMMM yyyy"; }
+                }
+            }
+        }
+
+        [JsonPropertyName("timeFormat")]
+        public string TimeFormat
+        {
+            readonly get => _timeFormat;
+            set
+            {
+                if (string.IsNullOrEmpty(value.Trim())) { _timeFormat = "HH:mm"; }
+                else
+                {
+                    var time = new TimeOnly();
+
+                    try
+                    {
+                        time.ToString(value);
+                        _timeFormat = value;
+                    }
+                    catch (FormatException) { _timeFormat = "HH:mm"; }
+                }
+            }
+        }
+
+        [JsonIgnore]
+        public static string File => Path.Combine(Global.Directory, "settings.json");
+
+        public static Settings ReadFromFile() => JsonSerializer.Deserialize<Settings>(System.IO.File.ReadAllText(File));
+
+        public readonly void WriteToFile()
+        {
+            if (!Directory.Exists(Global.Directory)) { Directory.CreateDirectory(Global.Directory); }
+            System.IO.File.WriteAllText(File, JsonSerializer.Serialize(this));
+        }
+
+        public static Settings FromUIElementCollection(UIElementCollection UIElementCollection)
+        {
+            var settings = new Settings();
 
             foreach (var element in UIElementCollection)
             {
                 if (element is Grid gridElement)
                 {
-                    var inputField = gridElement.Children[1];
+                    var inputField = (TextBox)gridElement.Children[1];
+                    var text = inputField.Text.Trim();
 
-                    if (inputField is TextBox textBox)
+                    switch (inputField.Name)
                     {
-                        var text = textBox.Text.Trim();
-
-                        switch (textBox.Name)
-                        {
-                            case "CalendarID": config.CalendarID = text; break;
-                            case "SchoolURL": config.SchoolURL = text; break;
-                            case "Schoolname": config.Schoolname = text; break;
-                            case "Username": config.Username = text; break;
-                            case "Password": config.Password = text; break;
-                            case "DateFormat": config.DateFormat = text; break;
-                        }
+                        case "ShortDateFormat": settings.ShortDateFormat = text; break;
+                        case "LongDateFormat": settings.LongDateFormat = text; break;
+                        case "TimeFormat": settings.TimeFormat = text; break;
                     }
-                    else if (inputField is PasswordBox passwordBox) { config.Password = passwordBox.Password; }
                 }
             }
 
-            string[] requiredFields = [config.SchoolURL, config.Schoolname, config.Username, config.Password];
-            if (requiredFields.Any(string.IsNullOrEmpty)) { throw new Exception("One or more required fields are empty!"); }
-
-            return config;
+            return settings;
         }
     }
 }

@@ -8,26 +8,23 @@
         Title="examin" Height="700" Width="1200">
     <Window.Resources>
         <Style TargetType="Label">
-            <Setter Property="Margin" Value="0 0 10 10"/>
             <Setter Property="FontSize" Value="20" />
         </Style>
         <Style TargetType="TextBox">
-            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="20" />
-            <Setter Property="Padding" Value="2 5"/>
-            <Setter Property="Margin" Value="0 0 0 10"/>
+            <Setter Property="Padding" Value="12 7.5"/>
         </Style>
         <Style TargetType="PasswordBox">
-            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="20" />
-            <Setter Property="Padding" Value="2 5"/>
-            <Setter Property="Margin" Value="0 0 0 10"/>
+            <Setter Property="Padding" Value="12 7.5"/>
         </Style>
         <Style TargetType="Button">
-            <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontSize" Value="20" />
-            <Setter Property="Padding" Value="2 5"/>
-            <Setter Property="Margin" Value="0 10 0 0"/>
+            <Setter Property="Padding" Value="12 7.5"/>
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="Padding" Value="12 7.5"/>
         </Style>
 
         <!-- credits to https://it-delinquent.medium.com/building-an-ios-style-toggle-button-in-wpf-and-xaml-678939f7e7ef for ToggleButton style -->
