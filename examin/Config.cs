@@ -35,13 +35,6 @@ namespace examin.Config
 
     internal struct Settings
     {
-        public Settings()
-        {
-            _shortDateFormat = "dd.MM.yyyy";
-            _longDateFormat = "dd MMMM yyyy";
-            _timeFormat = "HH:mm";
-        }
-
         [JsonIgnore]
         private string _shortDateFormat { get; set; }
 
@@ -54,20 +47,29 @@ namespace examin.Config
         [JsonPropertyName("shortDateFormat")]
         public string ShortDateFormat
         {
-            readonly get => _shortDateFormat;
-            set
+            get
             {
-                if (string.IsNullOrEmpty(value.Trim())) { _shortDateFormat = "dd.MM.yyyy"; }
-                else
+                if (!string.IsNullOrEmpty(_shortDateFormat?.Trim()))
                 {
-                    var date = new DateOnly();
-
                     try
                     {
-                        date.ToString(value);
+                        new DateOnly().ToString(_shortDateFormat);
+                        return _shortDateFormat;
+                    }
+                    catch (FormatException) { return _shortDateFormat = "dd.MM.yyyy"; }
+                }
+                else { return _shortDateFormat = "dd.MM.yyyy"; }
+            }
+            set
+            {
+                if (!string.IsNullOrEmpty(value?.Trim()))
+                {
+                    try
+                    {
+                        new DateOnly().ToString(value);
                         _shortDateFormat = value;
                     }
-                    catch (FormatException) { _shortDateFormat = "dd.MM.yyyy"; }
+                    catch (FormatException) { }
                 }
             }
         }
@@ -75,20 +77,29 @@ namespace examin.Config
         [JsonPropertyName("longDateFormat")]
         public string LongDateFormat
         {
-            readonly get => _longDateFormat;
-            set
+            get
             {
-                if (string.IsNullOrEmpty(value.Trim())) { _longDateFormat = "dd MMMM yyyy"; }
-                else
+                if (!string.IsNullOrEmpty(_longDateFormat?.Trim()))
                 {
-                    var date = new DateOnly();
-
                     try
                     {
-                        date.ToString(value);
+                        new DateOnly().ToString(_longDateFormat);
+                        return _longDateFormat;
+                    }
+                    catch (FormatException) { return _longDateFormat = "dd MMMM yyyy"; }
+                }
+                else { return _longDateFormat = "dd MMMM yyyy"; }
+            }
+            set
+            {
+                if (!string.IsNullOrEmpty(value?.Trim()))
+                {
+                    try
+                    {
+                        new DateOnly().ToString(value);
                         _longDateFormat = value;
                     }
-                    catch (FormatException) { _longDateFormat = "dd MMMM yyyy"; }
+                    catch (FormatException) { }
                 }
             }
         }
@@ -96,20 +107,29 @@ namespace examin.Config
         [JsonPropertyName("timeFormat")]
         public string TimeFormat
         {
-            readonly get => _timeFormat;
-            set
+            get
             {
-                if (string.IsNullOrEmpty(value.Trim())) { _timeFormat = "HH:mm"; }
-                else
+                if (!string.IsNullOrEmpty(_timeFormat?.Trim()))
                 {
-                    var time = new TimeOnly();
-
                     try
                     {
-                        time.ToString(value);
+                        new TimeOnly().ToString(_timeFormat);
+                        return _timeFormat;
+                    }
+                    catch (FormatException) { return _timeFormat = "HH:mm"; }
+                }
+                else { return _timeFormat = "HH:mm"; }
+            }
+            set
+            {
+                if (!string.IsNullOrEmpty(value?.Trim()))
+                {
+                    try
+                    {
+                        new TimeOnly().ToString(value);
                         _timeFormat = value;
                     }
-                    catch (FormatException) { _timeFormat = "HH:mm"; }
+                    catch (FormatException) { }
                 }
             }
         }
