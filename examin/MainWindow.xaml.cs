@@ -1,16 +1,15 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
 using System.IO;
 using System.Reflection;
-using System.Windows.Controls;
-using System.Windows.Input;
 using System.Globalization;
-using System.Windows.Media;
-using System.Windows.Controls.Primitives;
+using System.Text.Json.Serialization;
 using Microsoft.Win32;
 using examin.Config;
 using examin.WebuntisAPI;
-using System.Text.Json.Serialization;
-using System.Reflection.Metadata;
 
 namespace examin
 {
