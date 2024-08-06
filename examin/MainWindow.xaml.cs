@@ -23,16 +23,9 @@ namespace examin
         {
             InitializeComponent();
 
-            if (!File.Exists(Settings.File))
-            {
-                _settings = new();
-                _settings.WriteToFile();
-            }
-            else { _settings = Settings.ReadFromFile(); }
-
             Loaded += (sender, e) =>
             {
-                if (!File.Exists(School.File)) { LoadSettings(); }
+                if (!File.Exists(Settings.File) || !File.Exists(School.File)) { LoadSettings(); }
                 else
                 {
                     _school = School.ReadFromFile();
@@ -192,11 +185,16 @@ namespace examin
             Grid.SetRow(searchSchoolButton, 0);
             Grid.SetColumn(searchSchoolButton, 1);
 
-            var schoolsCombobox = new ComboBox { SelectedItem = _school, DisplayMemberPath = "Name", IsEnabled = File.Exists(School.File), Margin = new(0, 0, 10, 0) };
+            var schoolsCombobox = new ComboBox { DisplayMemberPath = "Name", IsEnabled = File.Exists(School.File), Margin = new(0, 0, 10, 0) };
+            if (File.Exists(School.File))
+            {
+                schoolsCombobox.ItemsSource = new[] { _school };
+                schoolsCombobox.SelectedIndex = 0;
+            }
             Grid.SetRow(schoolsCombobox, 1);
             Grid.SetColumn(schoolsCombobox, 0);
 
-            var selectSchoolButton = new Button { Content = "Select School", IsEnabled = false };
+            var selectSchoolButton = new Button { Content = "Select School", IsEnabled = File.Exists(School.File) };
             Grid.SetRow(selectSchoolButton, 1);
             Grid.SetColumn(selectSchoolButton, 1);
 
