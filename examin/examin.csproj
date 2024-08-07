@@ -6,6 +6,29 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <PlatformTarget>x64</PlatformTarget>
+    <Authors>Antonio Subašić</Authors>
+    <Copyright>GPL-3.0 license</Copyright>
+    <RepositoryUrl>https://github.com/antoniosubasic/examin</RepositoryUrl>
+    <Title>Examin</Title>
+    <PackageIcon>icon.png</PackageIcon>
+    <ApplicationIcon>Images\icon.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <SelfContained>true</SelfContained>
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Images\icon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Images\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
