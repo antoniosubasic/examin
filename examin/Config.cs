@@ -139,7 +139,11 @@ namespace examin.Config
         [JsonIgnore]
         public static string File => Path.Combine(Global.Directory, "settings.json");
 
-        public static Settings ReadFromFile() => JsonSerializer.Deserialize<Settings>(System.IO.File.ReadAllText(File));
+        public static Settings ReadFromFile()
+        {
+            if (System.IO.File.Exists(File)) { return JsonSerializer.Deserialize<Settings>(System.IO.File.ReadAllText(File)); }
+            else { return new(); }
+        }
 
         public readonly void WriteToFile()
         {

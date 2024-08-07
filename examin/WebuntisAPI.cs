@@ -105,18 +105,22 @@ namespace examin.WebuntisAPI
                 };
 
                 var response = await client.SendAsync(request);
+                var content = await response.Content.ReadAsStringAsync();
 
-                if (response.IsSuccessStatusCode)
+                if (!content.Contains("Invalid user name and/or password"))
                 {
-                    var responseCookies = response.Headers.GetValues("Set-Cookie");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseCookies = response.Headers.GetValues("Set-Cookie");
 
-                    _jSessionId = responseCookies.First(cookie => cookie.StartsWith("JSESSIONID")).Split(';')[0].Split('=')[1];
-                    _schoolId = responseCookies.First(cookie => cookie.StartsWith("schoolname")).Split(';')[0].Split('=')[1].Trim('"');
+                        _jSessionId = responseCookies.First(cookie => cookie.StartsWith("JSESSIONID")).Split(';')[0].Split('=')[1];
+                        _schoolId = responseCookies.First(cookie => cookie.StartsWith("schoolname")).Split(';')[0].Split('=')[1].Trim('"');
 
-                    if (_jSessionId is null || _schoolId is null) { throw new HttpRequestException("JSESSIONID or SCHOOLID not found"); }
-                    else { LoggedIn = true; }
+                        if (_jSessionId is null || _schoolId is null) { throw new HttpRequestException("JSESSIONID or SCHOOLID not found"); }
+                        else { LoggedIn = true; }
+                    }
+                    else { throw new HttpRequestException(content); }
                 }
-                else { throw new HttpRequestException(await response.Content.ReadAsStringAsync()); }
             }
         }
 

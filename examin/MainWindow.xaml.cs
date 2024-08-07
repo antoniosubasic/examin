@@ -23,7 +23,12 @@ namespace examin
         public MainWindow()
         {
             InitializeComponent();
-            Loaded += (sender, e) => LoadLogin();
+            Loaded += (sender, e) =>
+            {
+                _settings = Settings.ReadFromFile();
+                _aliases = Aliases.ReadFromFile();
+                LoadLogin();
+            };
         }
 
         private void LoadLogin()
@@ -124,8 +129,7 @@ namespace examin
                 if (_session is not null)
                 {
                     _session = null;
-                    usernameInputField.Text = passwordInputField.Password = "";
-                    loginButton.Content = "Login";
+                    LoadLogin();
                 }
 
                 usernameInputField.IsEnabled = passwordInputField.IsEnabled = loginButton.IsEnabled = true;
@@ -137,7 +141,7 @@ namespace examin
             #region Login Handlers
             async Task Login()
             {
-                if (!string.IsNullOrWhiteSpace(usernameInputField.Text) && !string.IsNullOrWhiteSpace(passwordInputField.Password))
+                if (!string.IsNullOrEmpty(usernameInputField.Text) && !string.IsNullOrEmpty(passwordInputField.Password))
                 {
                     usernameInputField.IsEnabled = passwordInputField.IsEnabled = loginButton.IsEnabled = false;
                     Mouse.OverrideCursor = Cursors.Wait;
@@ -197,7 +201,8 @@ namespace examin
                     new ColumnDefinition { Width = new(1, GridUnitType.Star) }
                 },
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new(10)
             };
 
             Main.Content = _session is not null && _session.LoggedIn ? new DockPanel { Children = { menu, home } } : home;
@@ -234,7 +239,8 @@ namespace examin
                 },
                 MinWidth = 200,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new(10)
             };
             #endregion
 
@@ -357,7 +363,7 @@ namespace examin
             #endregion
 
             #region Menu UI + Handlers
-            var backToHome = new MenuItem { Header = "Back to Home" };
+            var backToHome = new MenuItem { Header = "Save & Back to Home" };
             backToHome.Click += (sender, e) =>
             {
                 editFormats.IsEnabled = editAliases.IsEnabled = false;
