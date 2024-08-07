@@ -18,93 +18,227 @@ namespace examin
         private Settings _settings;
         private School _school;
         private Session? _session;
+        private Aliases _aliases;
 
         public MainWindow()
         {
             InitializeComponent();
-
-            Loaded += (sender, e) =>
-            {
-                if (!File.Exists(Settings.File) || !File.Exists(School.File)) { LoadSettings(); }
-                else
-                {
-                    _school = School.ReadFromFile();
-                    LoadHome();
-                }
-            };
+            Loaded += (sender, e) => LoadLogin();
         }
 
-        // TODO: add settings button (top right)
-        private void LoadHome()
+        private void LoadLogin()
         {
-            var userAuthenticationStackPanel = new StackPanel();
-            var examFetchingStackPanel = new StackPanel { IsEnabled = false };
+            #region Select School UI
+            var searchSchoolQuery = new TextBox { Margin = new(0, 0, 5, 5) };
+            Grid.SetRow(searchSchoolQuery, 0);
+            Grid.SetColumn(searchSchoolQuery, 0);
 
-            #region User Authentication
-            var username = new TextBox { Margin = new(0, 0, 0, 10), HorizontalContentAlignment = HorizontalAlignment.Center };
-            var password = new PasswordBox { Margin = new(0, 0, 0, 20), HorizontalContentAlignment = HorizontalAlignment.Center };
-            var login = new Button { Content = "Login", HorizontalContentAlignment = HorizontalAlignment.Center };
+            var searchSchoolButton = new Button { Content = "Search School", Margin = new(5, 0, 0, 5) };
+            Grid.SetRow(searchSchoolButton, 0);
+            Grid.SetColumn(searchSchoolButton, 1);
 
-            login.Click += async (sender, e) =>
+            var schoolsFoundCombobox = new ComboBox { DisplayMemberPath = "Name", Margin = new(0, 5, 5, 0), IsEnabled = File.Exists(School.File) };
+            Grid.SetRow(schoolsFoundCombobox, 1);
+            Grid.SetColumn(schoolsFoundCombobox, 0);
+            if (File.Exists(School.File))
             {
-                if (!string.IsNullOrWhiteSpace(username.Text) && !string.IsNullOrWhiteSpace(password.Password))
+                _school = School.ReadFromFile();
+                schoolsFoundCombobox.ItemsSource = new[] { _school };
+                schoolsFoundCombobox.SelectedIndex = 0;
+            }
+
+            var selectSchoolButton = new Button { Content = "Select School", Margin = new(5, 5, 0, 0), IsEnabled = File.Exists(School.File) };
+            Grid.SetRow(selectSchoolButton, 1);
+            Grid.SetColumn(selectSchoolButton, 1);
+
+            var selectSchool = new Grid
+            {
+                Children = { searchSchoolQuery, searchSchoolButton, schoolsFoundCombobox, selectSchoolButton },
+                VerticalAlignment = VerticalAlignment.Center,
+                RowDefinitions =
                 {
-                    username.IsEnabled = password.IsEnabled = login.IsEnabled = false;
+                    new RowDefinition { Height = new(1, GridUnitType.Star) },
+                    new RowDefinition { Height = new(1, GridUnitType.Star) }
+                },
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                    new ColumnDefinition { Width = new(1, GridUnitType.Auto) }
+                },
+                MinWidth = 500,
+                Margin = new(0, 0, 50, 0)
+            };
+            Grid.SetColumn(selectSchool, 0);
+            #endregion
+
+            #region Login UI
+            var usernameInputField = new TextBox { Text = _session?.Username, Margin = new(0, 0, 0, 5), HorizontalContentAlignment = HorizontalAlignment.Center, IsEnabled = _session is null || !_session.LoggedIn };
+            var passwordInputField = new PasswordBox { Password = _session?.Password, Margin = new(0, 5, 0, 10), HorizontalContentAlignment = HorizontalAlignment.Center, IsEnabled = _session is null || !_session.LoggedIn };
+            var loginButton = new Button { Margin = new(0, 10, 0, 0), Content = (_session is not null && _session.LoggedIn) ? "Logout" : "Login", HorizontalContentAlignment = HorizontalAlignment.Center, IsEnabled = File.Exists(School.File) };
+
+            var login = new StackPanel
+            {
+                Children = { usernameInputField, passwordInputField, loginButton },
+                MinWidth = 450,
+                Margin = new(0, 50, 0, 0)
+            };
+            Grid.SetColumn(login, 1);
+            #endregion
+
+            #region Select School Handlers
+            async Task SearchSchool()
+            {
+                searchSchoolQuery.IsEnabled = searchSchoolButton.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                try
+                {
+                    var schools = await Session.SearchSchool(searchSchoolQuery.Text);
+
+                    if (schools.Any())
+                    {
+                        schoolsFoundCombobox.ItemsSource = schools;
+                        schoolsFoundCombobox.SelectedIndex = 0;
+                        selectSchoolButton.IsEnabled = schoolsFoundCombobox.IsEnabled = true;
+                    }
+                    else { MessageBox.Show("No schools found!", "Info", MessageBoxButton.OK, MessageBoxImage.Information); }
+                }
+                catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
+
+                searchSchoolQuery.IsEnabled = searchSchoolButton.IsEnabled = true;
+                Mouse.OverrideCursor = null;
+            }
+
+            searchSchoolQuery.KeyDown += async (sender, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    await SearchSchool();
+                    searchSchoolQuery.Focus();
+                }
+            };
+            searchSchoolButton.Click += async (sender, e) => await SearchSchool();
+
+            selectSchoolButton.Click += (sender, e) =>
+            {
+                if (_session is not null)
+                {
+                    _session = null;
+                    usernameInputField.Text = passwordInputField.Password = "";
+                    loginButton.Content = "Login";
+                }
+
+                usernameInputField.IsEnabled = passwordInputField.IsEnabled = loginButton.IsEnabled = true;
+                searchSchoolQuery.Text = "";
+                (_school = (School)schoolsFoundCombobox.SelectedItem).WriteToFile();
+            };
+            #endregion
+
+            #region Login Handlers
+            async Task Login()
+            {
+                if (!string.IsNullOrWhiteSpace(usernameInputField.Text) && !string.IsNullOrWhiteSpace(passwordInputField.Password))
+                {
+                    usernameInputField.IsEnabled = passwordInputField.IsEnabled = loginButton.IsEnabled = false;
+                    Mouse.OverrideCursor = Cursors.Wait;
 
                     if (_session is not null && _session.LoggedIn)
                     {
                         _session = null;
-                        username.Text = password.Password = string.Empty;
-                        login.Content = "Login";
-                        examFetchingStackPanel.IsEnabled = false;
-
-                        username.IsEnabled = password.IsEnabled = login.IsEnabled = true;
+                        LoadLogin();
                     }
                     else
                     {
-                        _session = new(_school, username.Text, password.Password);
+                        _session = new(_school, usernameInputField.Text, passwordInputField.Password);
                         await _session.TryLogin();
 
                         if (_session.LoggedIn)
                         {
-                            login.Content = "Logout";
-                            login.IsEnabled = examFetchingStackPanel.IsEnabled = true;
+                            loginButton.Content = "Logout";
+                            loginButton.IsEnabled = true;
+                            Mouse.OverrideCursor = null;
+                            LoadHome();
                         }
                         else
                         {
                             MessageBox.Show("Error logging in. Please try again.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            username.IsEnabled = password.IsEnabled = login.IsEnabled = true;
+                            usernameInputField.IsEnabled = passwordInputField.IsEnabled = loginButton.IsEnabled = true;
                         }
                     }
+
+                    Mouse.OverrideCursor = null;
+                }
+            }
+
+            passwordInputField.KeyDown += async (sender, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    await Login();
+                    loginButton.Focus();
                 }
             };
-
-            userAuthenticationStackPanel.Children.Add(username);
-            userAuthenticationStackPanel.Children.Add(password);
-            userAuthenticationStackPanel.Children.Add(login);
-
-            userAuthenticationStackPanel.Margin = new(0, 0, 25, 0);
-            userAuthenticationStackPanel.MinWidth = 350;
-
-            Grid.SetColumn(userAuthenticationStackPanel, 0);
-            Grid.SetRow(userAuthenticationStackPanel, 1);
+            loginButton.Click += async (sender, e) => await Login();
             #endregion
 
-            #region Exam Fetching
+            #region Menu UI + Handlers
+            var navigateToHome = new MenuItem { Header = "Navigate to Home" };
+            navigateToHome.Click += (sender, e) => LoadHome();
+
+            var menu = new Menu { Items = { navigateToHome } };
+            #endregion
+
+            var home = new Grid
+            {
+                Children = { selectSchool, login },
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                    new ColumnDefinition { Width = new(1, GridUnitType.Star) }
+                },
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            Main.Content = _session is not null && _session.LoggedIn ? new DockPanel { Children = { menu, home } } : home;
+        }
+
+        private void LoadHome()
+        {
+            // TODO: add automatic schoolyear detection from API
+            #region Exam Fetching UI
             var dateTimeFrom = new TextBox
             {
                 Text = new DateOnly(DateTime.Now.Year - (DateTime.Now.Month <= 8 ? 1 : 0), 9, 1).ToString(_settings.ShortDateFormat),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 Margin = new(0, 0, 0, 10)
             };
+
             var dateTimeTo = new TextBox
             {
                 Text = new DateOnly(DateTime.Now.Year + (DateTime.Now.Month <= 8 ? 0 : 1), 7, 8).ToString(_settings.ShortDateFormat),
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 Margin = new(0, 0, 0, 20)
             };
+
             var fetchExams = new Button { Content = "Fetch Exams", HorizontalContentAlignment = HorizontalAlignment.Center };
 
+            var examFetching = new StackPanel
+            {
+                Children =
+                {
+                    new Label { Content = _school.Name, FontWeight = FontWeights.Bold, Margin = new(0, 0, 0, 35), HorizontalContentAlignment = HorizontalAlignment.Center },
+                    dateTimeFrom,
+                    dateTimeTo,
+                    fetchExams
+                },
+                MinWidth = 200,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            #endregion
+
+            #region Exam Fetching Handlers
             fetchExams.Click += async (sender, e) =>
             {
                 dateTimeFrom.IsEnabled = dateTimeTo.IsEnabled = fetchExams.IsEnabled = false;
@@ -121,131 +255,33 @@ namespace examin
                 dateTimeFrom.IsEnabled = dateTimeTo.IsEnabled = fetchExams.IsEnabled = true;
                 Mouse.OverrideCursor = null;
             };
-
-            examFetchingStackPanel.Children.Add(dateTimeFrom);
-            examFetchingStackPanel.Children.Add(dateTimeTo);
-            examFetchingStackPanel.Children.Add(fetchExams);
-
-            examFetchingStackPanel.Margin = new(25, 0, 0, 0);
-            examFetchingStackPanel.MinWidth = 200;
-
-            Grid.SetColumn(examFetchingStackPanel, 1);
-            Grid.SetRow(examFetchingStackPanel, 1);
             #endregion
 
-            var schoolName = new Label { Content = _school.Name, FontWeight = FontWeights.Bold, Margin = new(0, 0, 0, 35), HorizontalContentAlignment = HorizontalAlignment.Center };
-            Grid.SetRow(schoolName, 0);
-            Grid.SetColumnSpan(schoolName, 2);
+            #region Menu UI + Handlers
+            var backToLogin = new MenuItem { Header = "Back to Login" };
+            backToLogin.Click += (sender, e) => LoadLogin();
 
-            Main.Content = new Grid()
-            {
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Children = { schoolName, userAuthenticationStackPanel, examFetchingStackPanel },
-                RowDefinitions =
-                {
-                    new() { Height = new GridLength(1, GridUnitType.Auto) },
-                    new() { Height = new GridLength(1, GridUnitType.Star) }
-                },
-                ColumnDefinitions =
-                {
-                    new() { Width = new GridLength(1, GridUnitType.Star) },
-                    new() { Width = new GridLength(1, GridUnitType.Star) }
-                },
-                Margin = new(10)
-            };
+            var navigateToSettings = new MenuItem { Header = "Navigate to Settings" };
+            navigateToSettings.Click += (sender, e) => LoadSettings();
+
+            var menu = new Menu { Items = { backToLogin, navigateToSettings } };
+            #endregion
+
+            Main.Content = new DockPanel { Children = { menu, examFetching } };
         }
 
         private void LoadSettings()
         {
-            var changesGrid = new Grid
+            #region Edit Formats UI
+            var editFormats = new StackPanel
             {
-                ColumnDefinitions =
+                Children =
                 {
-                    new ColumnDefinition { Width = new(3, GridUnitType.Star) },
-                    new ColumnDefinition { Width = new(2, GridUnitType.Star) }
+                    new Label { Content = "Formats", HorizontalAlignment = HorizontalAlignment.Center, FontWeight = FontWeights.Bold, Margin = new(0, 0, 0, 35) }
                 },
-                Margin = new(0, 0, 0, 10)
-            };
-            var aliasesStackPanel = new StackPanel();
-
-            #region Changes
-            var changeSchoolStackPanel = new StackPanel { Margin = new(0, 0, 50, 0) };
-            Grid.SetColumn(changeSchoolStackPanel, 0);
-
-            var changeFormatsStackPanel = new StackPanel { Margin = new(50, 0, 0, 0) };
-            Grid.SetColumn(changeFormatsStackPanel, 1);
-
-            #region School
-            var searchSchoolQuery = new TextBox { Margin = new(0, 0, 10, 10) };
-            Grid.SetRow(searchSchoolQuery, 0);
-            Grid.SetColumn(searchSchoolQuery, 0);
-
-            var searchSchoolButton = new Button { Content = "Search School", Margin = new(0, 0, 0, 10) };
-            Grid.SetRow(searchSchoolButton, 0);
-            Grid.SetColumn(searchSchoolButton, 1);
-
-            var schoolsCombobox = new ComboBox { DisplayMemberPath = "Name", IsEnabled = File.Exists(School.File), Margin = new(0, 0, 10, 0) };
-            if (File.Exists(School.File))
-            {
-                schoolsCombobox.ItemsSource = new[] { _school };
-                schoolsCombobox.SelectedIndex = 0;
-            }
-            Grid.SetRow(schoolsCombobox, 1);
-            Grid.SetColumn(schoolsCombobox, 0);
-
-            var selectSchoolButton = new Button { Content = "Select School", IsEnabled = File.Exists(School.File) };
-            Grid.SetRow(selectSchoolButton, 1);
-            Grid.SetColumn(selectSchoolButton, 1);
-
-            async Task SearchSchool()
-            {
-                searchSchoolQuery.IsEnabled = searchSchoolButton.IsEnabled = false;
-
-                try
-                {
-                    var schools = await Session.SearchSchool(searchSchoolQuery.Text);
-
-                    if (schools.Any())
-                    {
-                        selectSchoolButton.IsEnabled = schoolsCombobox.IsEnabled = true;
-                        schoolsCombobox.ItemsSource = schools;
-                        schoolsCombobox.SelectedIndex = 0;
-                    }
-                    else { MessageBox.Show("No schools found!", "Info", MessageBoxButton.OK, MessageBoxImage.Information); }
-                }
-                catch (Exception ex) { MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error); }
-
-                searchSchoolQuery.IsEnabled = searchSchoolButton.IsEnabled = true;
-            }
-
-            searchSchoolButton.Click += async (sender, e) => await SearchSchool();
-            searchSchoolButton.KeyDown += async (sender, e) => { if (e.Key == Key.Enter) { await SearchSchool(); } };
-
-            selectSchoolButton.Click += (sender, e) =>
-            {
-                searchSchoolQuery.Text = string.Empty;
-                ((School)schoolsCombobox.SelectedItem).WriteToFile();
+                Margin = new(0, 25, 0, 50)
             };
 
-            changeSchoolStackPanel.Children.Add(new Label { Content = "Select School", Margin = new(0, 0, 0, 10) });
-            changeSchoolStackPanel.Children.Add(new Grid
-            {
-                Children = { searchSchoolQuery, searchSchoolButton, schoolsCombobox, selectSchoolButton },
-                RowDefinitions =
-                {
-                    new RowDefinition { Height = new(1, GridUnitType.Star) },
-                    new RowDefinition { Height = new(1, GridUnitType.Star) }
-                },
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition { Width = new(3, GridUnitType.Star) },
-                    new ColumnDefinition { Width = new(1, GridUnitType.Star) }
-                }
-            });
-            #endregion
-
-            #region Formats
             foreach (var property in typeof(Settings).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.GetCustomAttribute<JsonIgnoreAttribute>() == null))
             {
                 var fieldName = new Label
@@ -269,7 +305,7 @@ namespace examin
                 };
                 Grid.SetColumn(fieldInput, 1);
 
-                changeFormatsStackPanel.Children.Add(new Grid
+                editFormats.Children.Add(new Grid
                 {
                     VerticalAlignment = VerticalAlignment.Center,
                     Children = { fieldName, fieldInput },
@@ -281,109 +317,97 @@ namespace examin
                     Margin = new(0, 0, 0, 10)
                 });
             }
+            #endregion
 
-            var saveFormats = new Button { Content = "Save Formats" };
-            saveFormats.Click += (sender, e) =>
+            #region Edit Aliases UI + Handlers
+            var editAliases = new StackPanel
             {
-                changeFormatsStackPanel.IsEnabled = false;
-
-                _settings = Settings.FromUIElementCollection(changeFormatsStackPanel.Children);
-                _settings.WriteToFile();
-
-                var properties = typeof(Settings).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.GetCustomAttribute<JsonIgnoreAttribute>() == null);
-                foreach (var uiElement in changeFormatsStackPanel.Children.Cast<UIElement>())
+                Children =
                 {
-                    if (uiElement is Grid grid)
-                    {
-                        var fieldInput = (TextBox)grid.Children[1];
-                        var property = properties.First(prop => prop.Name == fieldInput.Name);
-                        fieldInput.Text = (string?)property.GetValue(_settings);
-                    }
+                    new Label { Content = "Aliases", HorizontalAlignment = HorizontalAlignment.Center, FontWeight = FontWeights.Bold, Margin = new(0, 0, 0, 35) }
                 }
-
-                changeFormatsStackPanel.IsEnabled = true;
             };
 
-            changeFormatsStackPanel.Children.Add(saveFormats);
-            #endregion
-
-            changesGrid.Children.Add(changeSchoolStackPanel);
-            changesGrid.Children.Add(changeFormatsStackPanel);
-            #endregion
-
-            #region Aliases
-            aliasesStackPanel.Children.Add(new Label { Content = "Aliases" });
-            #endregion
-
-            Main.Content = new StackPanel
+            static Grid InputGrid(KeyValuePair<string, string>? alias = null)
             {
-                Children = { changesGrid, aliasesStackPanel },
-                Margin = new(50)
+                var left = new TextBox { Text = alias?.Key, Margin = new(0, 0, 10, 0), HorizontalContentAlignment = HorizontalAlignment.Right, IsReadOnly = alias is not null };
+                var right = new TextBox { Text = alias?.Value, HorizontalContentAlignment = HorizontalAlignment.Left };
+                Grid.SetColumn(right, 1);
+
+                return new Grid
+                {
+                    ColumnDefinitions =
+                    {
+                        new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                        new ColumnDefinition { Width = new(1, GridUnitType.Star) }
+                    },
+                    Children = { left, right },
+                    Margin = new(0, 0, 0, 10)
+                };
+            }
+
+            var addButton = new Button { Content = "Add", Margin = new(0, 0, 0, 20) };
+            addButton.Click += (sender, e) => editAliases.Children.Insert(2, InputGrid());
+            editAliases.Children.Add(addButton);
+
+            foreach (var alias in _aliases)
+            {
+                editAliases.Children.Add(InputGrid(alias));
+            }
+            #endregion
+
+            #region Menu UI + Handlers
+            var backToHome = new MenuItem { Header = "Back to Home" };
+            backToHome.Click += (sender, e) =>
+            {
+                editFormats.IsEnabled = editAliases.IsEnabled = false;
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                _settings = Settings.FromUIElementCollection(editFormats.Children);
+                _settings.WriteToFile();
+
+                _aliases.FromUIElementCollection(editAliases.Children);
+                _aliases.WriteToFile();
+
+                editFormats.IsEnabled = editAliases.IsEnabled = true;
+                Mouse.OverrideCursor = null;
+
+                LoadHome();
+            };
+
+            var menu = new Menu { Items = { backToHome } };
+            #endregion
+
+            Main.Content = new DockPanel
+            {
+                Children =
+                {
+                    menu,
+                    new StackPanel
+                    {
+                        Children = { editFormats, editAliases },
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new(10)
+                    }
+                }
             };
         }
 
-        // TODO: add back button (top left)
         private void LoadExams(IEnumerable<Exam> exams)
         {
-            var storeExamsGrid = new Grid
-            {
-                ColumnDefinitions =
-                {
-                    new ColumnDefinition { Width = new(1, GridUnitType.Star)},
-                    new ColumnDefinition { Width = new(1, GridUnitType.Star)}
-                },
-                Margin = new(0, 0, 0, 20)
-            };
-            var examsStackPanel = new StackPanel { MinWidth = 400 };
+            #region Exams UI
+            var examsElement = new StackPanel { MinWidth = 400, Margin = new(10) };
 
-            #region Store Exams
-            var saveExams = new Button { Content = "Save to File", Padding = new(12.5, 7.5, 12.5, 7.5), Margin = new(0, 0, 10, 0), HorizontalAlignment = HorizontalAlignment.Right };
-            Grid.SetColumn(saveExams, 0);
-            saveExams.Click += (sender, e) =>
-            {
-                var saveFileDialog = new SaveFileDialog
-                {
-                    FileName = "events.csv",
-                    DefaultExt = "csv",
-                    AddExtension = true,
-                    Filter = "CSV Files (*.csv)|*.csv"
-                };
-
-                if (saveFileDialog.ShowDialog() == true)
-                {
-                    using var writer = new StreamWriter(saveFileDialog.FileName);
-                    writer.WriteLine("Subject,Description,Start Date,Start Time,End Time");
-
-                    for (var i = 0; i < examsStackPanel.Children.Count; i++)
-                    {
-                        var grid = (Grid)((Border)examsStackPanel.Children[i]).Child;
-                        var isChecked = ((ToggleButton)grid.Children[2]).IsChecked;
-
-                        if (isChecked!.Value)
-                        {
-                            var exam = exams.ElementAt(i);
-                            writer.WriteLine($"{exam.Subject},{exam.Description},{exam.Date.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture)},{exam.StartTime:h:mm tt},{exam.EndTime:h:mm tt}");
-                        }
-                    }
-                }
-            };
-
-            var pushExams = new Button { Content = "Push to Google Calendar", Padding = new(12.5, 7.5, 12.5, 7.5), HorizontalAlignment = HorizontalAlignment.Left };
-            Grid.SetColumn(pushExams, 1);
-            pushExams.Click += (sender, e) =>
-            {
-                MessageBox.Show("Push to Google Calendar");
-            };
-
-            storeExamsGrid.Children.Add(saveExams);
-            storeExamsGrid.Children.Add(pushExams);
-            #endregion
-
-            #region Exams
             for (var i = 0; i < exams.Count(); i++)
             {
                 var exam = exams.ElementAt(i);
-                exam.TranslateSubject();
+
+                if (!string.IsNullOrEmpty(exam.Subject))
+                {
+                    if (_aliases.TryGetValue(exam.Subject, out var alias)) { exam.Subject = alias; }
+                    else { _aliases.Add(exam.Subject, exam.Subject); }
+                }
 
                 var subject = new Label { Content = exam.Subject, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
                 Grid.SetColumn(subject, 0);
@@ -420,7 +444,7 @@ namespace examin
                     }
                 };
 
-                examsStackPanel.Children.Add(new Border
+                examsElement.Children.Add(new Border
                 {
                     Child = grid,
                     Margin = new(0, 10, 0, 10),
@@ -429,12 +453,57 @@ namespace examin
                     CornerRadius = new(5)
                 });
             }
+
+            _aliases.WriteToFile();
             #endregion
 
-            Main.Content = new StackPanel
+            #region Menu UI + Handlers
+            var saveToFile = new MenuItem { Header = "Save to File" };
+            saveToFile.Click += (sender, e) =>
             {
-                Children = { storeExamsGrid, examsStackPanel },
-                Margin = new(10, 20, 10, 10)
+                var saveFileDialog = new SaveFileDialog
+                {
+                    FileName = "events.csv",
+                    DefaultExt = "csv",
+                    AddExtension = true,
+                    Filter = "CSV Files (*.csv)|*.csv"
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    using var writer = new StreamWriter(saveFileDialog.FileName);
+                    writer.WriteLine("Subject,Description,Start Date,Start Time,End Time");
+
+                    for (var i = 0; i < examsElement.Children.Count; i++)
+                    {
+                        var grid = (Grid)((Border)examsElement.Children[i]).Child;
+                        var isChecked = ((ToggleButton)grid.Children[2]).IsChecked;
+
+                        if (isChecked!.Value)
+                        {
+                            var exam = exams.ElementAt(i);
+                            writer.WriteLine($"{exam.Subject},{exam.Description},{exam.Date.ToString("MM/dd/yyyy", CultureInfo.InvariantCulture)},{exam.StartTime:h:mm tt},{exam.EndTime:h:mm tt}");
+                        }
+                    }
+                }
+            };
+
+            var pushToGoogleCalendar = new MenuItem { Header = "Push to Google Calendar" };
+            pushToGoogleCalendar.Click += (sender, e) => MessageBox.Show("Push to Google Calendar");
+
+            var backToHome = new MenuItem { Header = "Back to Home" };
+            backToHome.Click += (sender, e) => LoadHome();
+
+            var menu = new Menu { Items = { backToHome, saveToFile, pushToGoogleCalendar } };
+            #endregion
+
+            Main.Content = new DockPanel
+            {
+                Children =
+                {
+                    menu,
+                    examsElement
+                }
             };
         }
     }

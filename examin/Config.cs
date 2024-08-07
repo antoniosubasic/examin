@@ -1,7 +1,9 @@
 ﻿using System.Windows.Controls;
 using System.IO;
+using System.Collections;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Diagnostics.CodeAnalysis;
 
 namespace examin.Config
 {
@@ -145,11 +147,11 @@ namespace examin.Config
             System.IO.File.WriteAllText(File, JsonSerializer.Serialize(this));
         }
 
-        public static Settings FromUIElementCollection(UIElementCollection UIElementCollection)
+        public static Settings FromUIElementCollection(UIElementCollection uiElementCollection)
         {
             var settings = new Settings();
 
-            foreach (var element in UIElementCollection)
+            foreach (var element in uiElementCollection)
             {
                 if (element is Grid gridElement)
                 {
@@ -167,5 +169,79 @@ namespace examin.Config
 
             return settings;
         }
+    }
+
+    internal struct Aliases(Dictionary<string, string> aliases) : IDictionary<string, string>
+    {
+        private Dictionary<string, string> _aliases { get; set; } = aliases ?? [];
+        private Dictionary<string, string> aliases
+        {
+            get => _aliases ??= [];
+            set => _aliases = value ?? [];
+        }
+
+        public static string File => Path.Combine(Global.Directory, "aliases.json");
+
+        public static Aliases ReadFromFile()
+        {
+            if (System.IO.File.Exists(File))
+            {
+                var aliases = JsonSerializer.Deserialize<Dictionary<string, string>>(System.IO.File.ReadAllText(File)) ?? throw new JsonException("failed to deserialize aliases");
+                return new(aliases);
+            }
+            else { return new([]); }
+        }
+
+        public void WriteToFile()
+        {
+            if (!Directory.Exists(Global.Directory)) { Directory.CreateDirectory(Global.Directory); }
+            System.IO.File.WriteAllText(File, JsonSerializer.Serialize(aliases));
+        }
+
+        public void FromUIElementCollection(UIElementCollection uiElementCollection)
+        {
+            foreach (var element in uiElementCollection)
+            {
+                if (element is Grid gridElement)
+                {
+                    var left = ((TextBox)gridElement.Children[0]).Text.Trim();
+                    var right = ((TextBox)gridElement.Children[1]).Text.Trim();
+
+                    if (!string.IsNullOrEmpty(left) && !string.IsNullOrEmpty(right))
+                    {
+                        if (aliases.ContainsKey(left)) { aliases[left] = right; }
+                        else { aliases.Add(left, right); }
+                    }
+                }
+            }
+        }
+
+        public string this[string key]
+        {
+            get => aliases[key];
+            set => aliases[key] = value;
+        }
+
+        public ICollection<string> Keys => aliases.Keys;
+        public ICollection<string> Values => aliases.Values;
+        public int Count => aliases.Count;
+        public bool IsReadOnly => ((IDictionary<string, string>)aliases).IsReadOnly;
+        public void Add(string key, string value) => aliases.Add(key, value);
+        public void Add(KeyValuePair<string, string> item) => aliases.Add(item.Key, item.Value);
+        public void Clear() => aliases.Clear();
+        public bool Contains(KeyValuePair<string, string> item) => aliases.Contains(item);
+        public bool ContainsKey(string key) => aliases.ContainsKey(key);
+        public void CopyTo(KeyValuePair<string, string>[] array, int arrayIndex)
+        {
+            foreach (var kvp in aliases)
+            {
+                array[arrayIndex++] = kvp;
+            }
+        }
+        public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => aliases.GetEnumerator();
+        public bool Remove(KeyValuePair<string, string> item) => aliases.Remove(item.Key);
+        public bool Remove(string key) => aliases.Remove(key);
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out string value) => aliases.TryGetValue(key, out value);
+        IEnumerator IEnumerable.GetEnumerator() => aliases.GetEnumerator();
     }
 }

@@ -30,8 +30,8 @@ namespace examin.WebuntisAPI
     internal class Session(Config.School school, string username, string password)
     {
         private Config.School _school { get; set; } = school;
-        private string? _username { get; set; } = username;
-        private string? _password { get; set; } = password;
+        public string? Username { get; set; } = username;
+        public string? Password { get; set; } = password;
 
         private string? _jSessionId { get; set; }
         private string? _schoolId { get; set; }
@@ -98,8 +98,8 @@ namespace examin.WebuntisAPI
                     Content = new FormUrlEncodedContent(new Dictionary<string, string>
                     {
                         { "school", _school.LoginName },
-                        { "j_username", _username ?? throw new ArgumentNullException("username can't be null") },
-                        { "j_password", _password ?? throw new ArgumentNullException("password can't be null") },
+                        { "j_username", Username ?? throw new ArgumentNullException("username can't be null") },
+                        { "j_password", Password ?? throw new ArgumentNullException("password can't be null") },
                         { "token", "" }
                     })
                 };

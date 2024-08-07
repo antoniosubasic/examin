@@ -51,19 +51,5 @@ namespace examin
                 return new DateTimeOffset(dateTime);
             }
         }
-
-        public void TranslateSubject()
-        {
-            // translate subjects here
-            // for example:
-
-            // Subject = Subject switch
-            // {
-            //     "English" => "E",
-            //     "Math" => "M",
-            //     ...
-            //     _ => Subject
-            // };
-        }
     }
 }
