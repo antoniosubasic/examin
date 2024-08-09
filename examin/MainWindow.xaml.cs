@@ -13,22 +13,37 @@ using examin.WebuntisAPI;
 
 namespace examin
 {
+    public enum MainWindowPages
+    {
+        Login,
+        Home,
+        Settings,
+        Exams
+    }
+
     public partial class MainWindow : Window
     {
         private Settings _settings;
         private School _school;
         private Session? _session;
+        private Config.Calendar _calendar;
+        private GoogleAPI.Calendar? _calendarAPI;
         private Aliases _aliases;
 
         public MainWindow()
         {
             InitializeComponent();
+
             Loaded += (sender, e) =>
             {
                 _settings = Settings.ReadFromFile();
                 _aliases = Aliases.ReadFromFile();
+                _calendar = Config.Calendar.ReadFromFile();
                 LoadLogin();
             };
+
+            Closing += (sender, e) => _calendarAPI?.Deauthorize();
+            Closed += (sender, e) => _calendarAPI?.Deauthorize();
         }
 
         private void LoadLogin()
@@ -189,23 +204,33 @@ namespace examin
             var navigateToHome = new MenuItem { Header = "Navigate to Home" };
             navigateToHome.Click += (sender, e) => LoadHome();
 
-            var menu = new Menu { Items = { navigateToHome } };
+            var navigateToSettings = new MenuItem { Header = "Navigate to Settings" };
+            navigateToSettings.Click += (sender, e) => LoadSettings(MainWindowPages.Login);
+
+            var menu = new Menu();
+            if (_session is not null && _session.LoggedIn) { menu.Items.Add(navigateToHome); }
+            menu.Items.Add(navigateToSettings);
             #endregion
 
-            var home = new Grid
+            Main.Content = new DockPanel
             {
-                Children = { selectSchool, login },
-                ColumnDefinitions =
+                Children =
                 {
-                    new ColumnDefinition { Width = new(1, GridUnitType.Star) },
-                    new ColumnDefinition { Width = new(1, GridUnitType.Star) }
-                },
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new(10)
+                    menu,
+                    new Grid
+                    {
+                        Children = { selectSchool, login },
+                        ColumnDefinitions =
+                        {
+                            new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                            new ColumnDefinition { Width = new(1, GridUnitType.Star) }
+                        },
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new(10)
+                    }
+                }
             };
-
-            Main.Content = _session is not null && _session.LoggedIn ? new DockPanel { Children = { menu, home } } : home;
         }
 
         private void LoadHome()
@@ -268,7 +293,7 @@ namespace examin
             backToLogin.Click += (sender, e) => LoadLogin();
 
             var navigateToSettings = new MenuItem { Header = "Navigate to Settings" };
-            navigateToSettings.Click += (sender, e) => LoadSettings();
+            navigateToSettings.Click += (sender, e) => LoadSettings(MainWindowPages.Home);
 
             var menu = new Menu { Items = { backToLogin, navigateToSettings } };
             #endregion
@@ -276,7 +301,7 @@ namespace examin
             Main.Content = new DockPanel { Children = { menu, examFetching } };
         }
 
-        private void LoadSettings()
+        private void LoadSettings(MainWindowPages previousPage)
         {
             #region Edit Formats UI
             var editFormats = new StackPanel
@@ -287,6 +312,8 @@ namespace examin
                 },
                 Margin = new(0, 25, 0, 50)
             };
+            Grid.SetRow(editFormats, 0);
+            Grid.SetColumn(editFormats, 0);
 
             foreach (var property in typeof(Settings).GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(prop => prop.GetCustomAttribute<JsonIgnoreAttribute>() == null))
             {
@@ -320,9 +347,81 @@ namespace examin
                         new ColumnDefinition { Width = new(1, GridUnitType.Star) },
                         new ColumnDefinition { Width = new(1, GridUnitType.Auto) }
                     },
-                    Margin = new(0, 0, 0, 10)
+                    Margin = new(0, 0, 25, 10)
                 });
             }
+            #endregion
+
+            #region Google Calendar API UI + Handlers
+            var titleLabel = new Label { Content = "Google Calendar API", HorizontalAlignment = HorizontalAlignment.Center, FontWeight = FontWeights.Bold, Margin = new(0, 0, 0, 35) };
+
+            var clientSecretFileLabel = new Label
+            {
+                Content = "Client Secret",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new(0, 0, 10, 10)
+            };
+            Grid.SetColumn(clientSecretFileLabel, 0);
+
+            var selectClientSecretFile = new Button { Content = "Select File", Margin = new(10, 0, 0, 10) };
+            Grid.SetColumn(selectClientSecretFile, 1);
+            selectClientSecretFile.Click += (sender, e) =>
+            {
+                var openFileDialog = new OpenFileDialog
+                {
+                    DefaultExt = "json",
+                    AddExtension = true,
+                    Filter = "JSON Files (*.json)|*.json"
+                };
+
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    File.Copy(openFileDialog.FileName, Config.Calendar.ClientSecretFile, true);
+                }
+            };
+
+            var calendarIDLabel = new Label
+            {
+                Content = "Calendar ID",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new(0, 0, 10, 10)
+            };
+            Grid.SetColumn(calendarIDLabel, 0);
+
+            var enterCalendarID = new TextBox { Text = _calendar.CalendarID, Margin = new(10, 0, 0, 10) };
+            Grid.SetColumn(enterCalendarID, 1);
+
+            var googleCalendarAPI = new StackPanel
+            {
+                Children =
+                {
+                    titleLabel,
+                    new Grid
+                    {
+                        Children = { clientSecretFileLabel, selectClientSecretFile },
+                        ColumnDefinitions =
+                        {
+                            new ColumnDefinition { Width = new(1, GridUnitType.Auto) },
+                            new ColumnDefinition { Width = new(1, GridUnitType.Star) }
+                        }
+                    },
+                    new Grid
+                    {
+                        Children = { calendarIDLabel, enterCalendarID },
+                        ColumnDefinitions =
+                        {
+                            new ColumnDefinition { Width = new(1, GridUnitType.Auto) },
+                            new ColumnDefinition { Width = new(1, GridUnitType.Star) }
+                        }
+                    }
+                },
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new(25, 0, 0, 0)
+            };
+            Grid.SetRow(googleCalendarAPI, 0);
+            Grid.SetColumn(googleCalendarAPI, 1);
             #endregion
 
             #region Edit Aliases UI + Handlers
@@ -331,8 +430,11 @@ namespace examin
                 Children =
                 {
                     new Label { Content = "Aliases", HorizontalAlignment = HorizontalAlignment.Center, FontWeight = FontWeights.Bold, Margin = new(0, 0, 0, 35) }
-                }
+                },
+                Margin = new(50, 0, 50, 0)
             };
+            Grid.SetRow(editAliases, 1);
+            Grid.SetColumnSpan(editAliases, 2);
 
             static Grid InputGrid(KeyValuePair<string, string>? alias = null)
             {
@@ -352,7 +454,7 @@ namespace examin
                 };
             }
 
-            var addButton = new Button { Content = "Add", Margin = new(0, 0, 0, 20) };
+            var addButton = new Button { Content = "Add", Margin = new(0, 0, 0, 20), MaxWidth = 200 };
             addButton.Click += (sender, e) => editAliases.Children.Insert(2, InputGrid());
             editAliases.Children.Add(addButton);
 
@@ -363,8 +465,8 @@ namespace examin
             #endregion
 
             #region Menu UI + Handlers
-            var backToHome = new MenuItem { Header = "Save & Back to Home" };
-            backToHome.Click += (sender, e) =>
+            var back = new MenuItem { Header = "Save & Back" };
+            back.Click += (sender, e) =>
             {
                 editFormats.IsEnabled = editAliases.IsEnabled = false;
                 Mouse.OverrideCursor = Cursors.Wait;
@@ -375,13 +477,28 @@ namespace examin
                 _aliases.FromUIElementCollection(editAliases.Children);
                 _aliases.WriteToFile();
 
+                _calendar = new() { CalendarID = enterCalendarID.Text };
+                _calendar.WriteToFile();
+
                 editFormats.IsEnabled = editAliases.IsEnabled = true;
                 Mouse.OverrideCursor = null;
 
-                LoadHome();
+                switch (previousPage)
+                {
+                    case MainWindowPages.Home:
+                        LoadHome();
+                        break;
+
+                    case MainWindowPages.Login:
+                        LoadLogin();
+                        break;
+
+                    default:
+                        throw new InvalidOperationException("Invalid previous page");
+                }
             };
 
-            var menu = new Menu { Items = { backToHome } };
+            var menu = new Menu { Items = { back } };
             #endregion
 
             Main.Content = new DockPanel
@@ -389,12 +506,20 @@ namespace examin
                 Children =
                 {
                     menu,
-                    new StackPanel
+                    new Grid
                     {
-                        Children = { editFormats, editAliases },
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center,
-                        Margin = new(10)
+                        Children = { editFormats, googleCalendarAPI, editAliases },
+                        RowDefinitions =
+                        {
+                            new RowDefinition { Height = new(1, GridUnitType.Star) },
+                            new RowDefinition { Height = new(1, GridUnitType.Star) }
+                        },
+                        ColumnDefinitions =
+                        {
+                            new ColumnDefinition { Width = new(1, GridUnitType.Star) },
+                            new ColumnDefinition { Width = new(1, GridUnitType.Star) }
+                        },
+                        Margin = new(25)
                     }
                 }
             };
@@ -495,7 +620,42 @@ namespace examin
             };
 
             var pushToGoogleCalendar = new MenuItem { Header = "Push to Google Calendar" };
-            pushToGoogleCalendar.Click += (sender, e) => MessageBox.Show("Push to Google Calendar");
+            pushToGoogleCalendar.Click += (sender, e) =>
+            {
+                if (!File.Exists(Config.Calendar.CalendarIDFile) || !File.Exists(Config.Calendar.ClientSecretFile))
+                {
+                    MessageBox.Show("Please set up the Google Calendar API in the Settings", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else
+                {
+                    _calendarAPI ??= new(_calendar);
+
+                    Main.IsEnabled = false;
+                    Mouse.OverrideCursor = Cursors.Wait;
+                    _calendarAPI.Authorize();
+                    Main.IsEnabled = true;
+                    Mouse.OverrideCursor = Cursors.Wait;
+
+                    for (var i = 0; i < examsElement.Children.Count; i++)
+                    {
+                        var grid = (Grid)((Border)examsElement.Children[i]).Child;
+                        var isChecked = ((ToggleButton)grid.Children[2]).IsChecked;
+
+                        if (isChecked!.Value)
+                        {
+                            _calendarAPI.AddExam(exams.ElementAt(i));
+                        }
+                    }
+
+                    Main.IsEnabled = false;
+                    Mouse.OverrideCursor = Cursors.Wait;
+                    _calendarAPI.PushExams();
+                    Main.IsEnabled = true;
+                    Mouse.OverrideCursor = null;
+               
+                    MessageBox.Show("Exams pushed to Google Calendar", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            };
 
             var backToHome = new MenuItem { Header = "Back to Home" };
             backToHome.Click += (sender, e) => LoadHome();

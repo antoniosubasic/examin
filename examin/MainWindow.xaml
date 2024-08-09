@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:examin"
         mc:Ignorable="d"
-        Title="examin" Height="700" Width="1200">
+        Title="examin" Height="700" Width="1350">
     <Window.Resources>
         <Style TargetType="Label">
             <Setter Property="FontSize" Value="20" />

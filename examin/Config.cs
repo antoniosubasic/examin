@@ -248,4 +248,26 @@ namespace examin.Config
         public bool TryGetValue(string key, [MaybeNullWhen(false)] out string value) => aliases.TryGetValue(key, out value);
         IEnumerator IEnumerable.GetEnumerator() => aliases.GetEnumerator();
     }
+
+    internal struct Calendar
+    {
+        private string _calendarID { get; set; }
+
+        public string CalendarID
+        {
+            readonly get => _calendarID;
+            set { _calendarID = value.EndsWith("@group.calendar.google.com") ? value[..^"@group.calendar.google.com".Length] : value; }
+        }
+
+        public static string ClientSecretFile => Path.Combine(Global.Directory, "clientSecret.json");
+        public static string CalendarIDFile => Path.Combine(Global.Directory, "calendarID");
+
+        public static Calendar ReadFromFile() => new() { CalendarID = File.Exists(CalendarIDFile) ? File.ReadAllText(CalendarIDFile) : "" };
+
+        public readonly void WriteToFile()
+        {
+            if (!Directory.Exists(Global.Directory)) { Directory.CreateDirectory(Global.Directory); }
+            File.WriteAllText(CalendarIDFile, CalendarID);
+        }
+    }
 }
