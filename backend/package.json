@@ -1,0 +1,13 @@
+{
+  "name": "examin-backend",
+  "version": "1.0.0",
+  "scripts": {},
+  "keywords": [
+    "automated",
+    "exam",
+    "administrator"
+  ],
+  "author": "Antonio Subašić",
+  "license": "GPL-3.0-only",
+  "description": "an automated exam administrator"
+}
