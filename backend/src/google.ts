@@ -50,3 +50,19 @@ export async function authorize() {
 
     return oAuth2Client;
 }
+
+export async function getEvents(calendarId: string, from: Date, to: Date) {
+    const auth = await authorize();
+
+    const calendar = google.calendar({ version: 'v3', auth: auth as any });
+    const events = await calendar.events.list({
+        calendarId,
+        timeMin: from.toISOString(),
+        timeMax: to.toISOString(),
+        maxResults: 2500,
+        singleEvents: true,
+        orderBy: 'startTime',
+    });
+
+    return events.data;
+}
