@@ -24,7 +24,9 @@ public static class SchoolRoutes
             }
             catch (Exception ex)
             {
-                return Results.Problem($"error searching schools: {ex.Message}");
+                return ex.Message == "too many results"
+                    ? Results.BadRequest(new { error = ex.Message })
+                    : Results.Problem($"error searching schools: {ex.Message}");
             }
         })
         .WithName("SearchSchools")
