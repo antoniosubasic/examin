@@ -8,6 +8,12 @@ declare global {
 		// interface PageState {}
 		// interface Platform {}
 	}
+
+	interface School {
+		server: string;
+		displayName: string;
+		loginName: string;
+	}
 }
 
-export {};
+export { };
