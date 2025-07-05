@@ -1,0 +1,11 @@
+bin/
+obj/
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+README.md
+.vscode/
+**/node_modules
+**/.env
+**/.env.local
