@@ -121,6 +121,76 @@
                 return "bg-gray-100 text-gray-800";
         }
     }
+
+    function exportToCsv() {
+        if (exams.length === 0) {
+            return;
+        }
+
+        const headers = "Subject,Description,Start Date,Start Time,End Time";
+        const csvContent = [headers];
+
+        exams.forEach((exam) => {
+            const subject = exam.subject || "";
+            const description = exam.text || exam.name || "";
+
+            const examDate = new Date(exam.examDate + "T00:00:00");
+            const formattedDate = examDate.toLocaleDateString("en-US");
+
+            const formatTime = (timeStr: string) => {
+                const parts = timeStr.split(":");
+                const hours = parseInt(parts[0], 10);
+                const minutes = parseInt(parts[1], 10);
+
+                const date = new Date();
+                date.setHours(hours, minutes, 0, 0);
+
+                return date.toLocaleTimeString("en-US", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                });
+            };
+
+            const startTime = formatTime(exam.startTime);
+            const endTime = formatTime(exam.endTime);
+
+            const escapeCsvValue = (value: string) => {
+                if (
+                    value.includes(",") ||
+                    value.includes('"') ||
+                    value.includes("\n")
+                ) {
+                    return `"${value.replace(/"/g, '""')}"`;
+                }
+                return value;
+            };
+
+            const row = [
+                escapeCsvValue(subject),
+                escapeCsvValue(description),
+                formattedDate,
+                startTime,
+                endTime,
+            ].join(",");
+
+            csvContent.push(row);
+        });
+
+        const csvString = csvContent.join("\n");
+        const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "events.csv");
+            link.style.visibility = "hidden";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -232,10 +302,23 @@
             {#if exams.length > 0}
                 <div class="bg-white rounded-lg shadow">
                     <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-lg font-medium text-gray-900">
-                            Found {exams.length}
-                            {exams.length === 1 ? "entry" : "entries"}
-                        </h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-medium text-gray-900">
+                                Found {exams.length}
+                                {exams.length === 1 ? "entry" : "entries"}
+                            </h3>
+                            <button
+                                on:click={exportToCsv}
+                                class="
+                                    px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium
+                                    hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2
+                                    transition-colors duration-200
+                                "
+                                title="Export exams to CSV file"
+                            >
+                                Save as CSV
+                            </button>
+                        </div>
                     </div>
 
                     <div class="divide-y divide-gray-200">
