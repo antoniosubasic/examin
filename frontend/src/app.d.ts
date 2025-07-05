@@ -14,6 +14,16 @@ declare global {
 		displayName: string;
 		loginName: string;
 	}
+
+	interface Exam {
+		examType?: string;
+		name?: string;
+		examDate: string;
+		startTime: string;
+		endTime: string;
+		subject?: string;
+		text?: string;
+	}
 }
 
 export { };
