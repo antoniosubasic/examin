@@ -16,115 +16,31 @@
     } from "$lib/components/ui/alert";
     import { Separator } from "$lib/components/ui/separator";
     import { Label } from "$lib/components/ui/label";
-    import {
-        NavigationMenuRoot,
-        NavigationMenuItem,
-        NavigationMenuLink,
-        NavigationMenuList,
-    } from "$lib/components/ui/navigation-menu";
-    import { BookOpen, CheckCircle2Icon, School, LogOut } from "@lucide/svelte";
+    import { BookOpen, CheckCircle2Icon, School } from "@lucide/svelte";
+    import { authStore } from "$lib/stores/auth";
+    import { Navbar } from "$lib/components/navbar";
 
-    let sessionId = "";
-    let schoolName = "";
-    let loading = false;
     let showFullSessionId = false;
     let showLoginAlert = false;
 
+    $: ({ sessionId, schoolName, isAuthenticated } = $authStore);
+
     onMount(() => {
-        sessionId = localStorage.getItem("sessionId") || "";
-        schoolName = localStorage.getItem("schoolName") || "";
+        authStore.init();
 
         if (localStorage.getItem("justLoggedIn") === "true") {
             showLoginAlert = true;
             localStorage.removeItem("justLoggedIn");
         }
 
-        if (!sessionId) {
+        if (!isAuthenticated) {
             goto("/");
         }
     });
-
-    async function handleLogout() {
-        loading = true;
-
-        try {
-            await fetch("/api/auth/logout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ sessionId }),
-            });
-        } catch (err) {
-            console.error("Logout error:", err);
-        } finally {
-            localStorage.removeItem("sessionId");
-            localStorage.removeItem("schoolName");
-            loading = false;
-            goto("/");
-        }
-    }
 </script>
 
 <div class="min-h-screen">
-    <header class="border-b">
-        <div class="container mx-auto px-4 lg:px-8">
-            <div class="flex h-16 items-center justify-between">
-                <div class="flex items-center space-x-6">
-                    <div class="flex items-center space-x-2">
-                        <School class="h-6 w-6 text-primary" />
-                        <span class="text-xl font-semibold">Examin</span>
-                    </div>
-                    <NavigationMenuRoot class="hidden md:flex">
-                        <NavigationMenuList>
-                            <NavigationMenuItem>
-                                <NavigationMenuLink
-                                    href="/dashboard"
-                                    class="
-                                        group inline-flex h-9 w-max items-center justify-center
-                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
-                                        hover:bg-accent hover:text-accent-foreground
-                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
-                                        disabled:pointer-events-none disabled:opacity-50
-                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
-                                    "
-                                >
-                                    Dashboard
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-                            <NavigationMenuItem>
-                                <NavigationMenuLink
-                                    href="/exams"
-                                    class="
-                                        group inline-flex h-9 w-max items-center justify-center
-                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
-                                        hover:bg-accent hover:text-accent-foreground
-                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
-                                        disabled:pointer-events-none disabled:opacity-50
-                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
-                                        text-muted-foreground
-                                    "
-                                >
-                                    Exams
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-                        </NavigationMenuList>
-                    </NavigationMenuRoot>
-                </div>
-
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onclick={handleLogout}
-                    disabled={loading}
-                    class="ml-2"
-                >
-                    <LogOut class="h-4 w-4 mr-1" />
-                    {loading ? "Logging out..." : "Logout"}
-                </Button>
-            </div>
-        </div>
-    </header>
+    <Navbar />
 
     <main class="container mx-auto px-4 py-8 lg:px-8">
         <div class="space-y-8">

@@ -14,6 +14,7 @@
     import { Label } from "$lib/components/ui/label";
     import { Alert, AlertDescription } from "$lib/components/ui/alert";
     import { ChevronLeft, AlertCircleIcon } from "@lucide/svelte";
+    import { authStore } from "$lib/stores/auth";
 
     let schoolName = "";
     let schoolLoginName = "";
@@ -60,8 +61,7 @@
             const result = await response.json();
 
             if (response.ok && result.success) {
-                localStorage.setItem("sessionId", result.sessionId);
-                localStorage.setItem("schoolName", schoolName);
+                authStore.login(result.sessionId, schoolName);
                 localStorage.setItem("justLoggedIn", "true");
                 goto("/dashboard");
             } else {

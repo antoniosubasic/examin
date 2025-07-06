@@ -22,31 +22,26 @@
         TableHeader,
         TableRow,
     } from "$lib/components/ui/table";
-    import {
-        NavigationMenuRoot,
-        NavigationMenuItem,
-        NavigationMenuLink,
-        NavigationMenuList,
-    } from "$lib/components/ui/navigation-menu";
     import { Skeleton } from "$lib/components/ui/skeleton";
     import { Separator } from "$lib/components/ui/separator";
-    import { School, LogOut, FileTextIcon } from "@lucide/svelte";
+    import { FileTextIcon } from "@lucide/svelte";
+    import { authStore } from "$lib/stores/auth";
+    import { Navbar } from "$lib/components/navbar";
 
-    let sessionId = "";
-    let schoolName = "";
-    let loading = false;
     let searching = false;
     let error = "";
     let startDate = "";
     let endDate = "";
     let exams: Exam[] = [];
 
-    onMount(() => {
-        sessionId = localStorage.getItem("sessionId") || "";
-        schoolName = localStorage.getItem("schoolName") || "";
+    $: ({ sessionId, isAuthenticated } = $authStore);
 
-        if (!sessionId) {
+    onMount(() => {
+        authStore.init();
+
+        if (!isAuthenticated) {
             goto("/");
+            return;
         }
 
         const now = new Date();
@@ -59,29 +54,6 @@
         startDate = firstDay;
         endDate = lastDayFormatted;
     });
-
-    async function handleLogout() {
-        loading = true;
-
-        try {
-            await fetch("/api/auth/logout", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ sessionId }),
-            });
-            toast.success("Logged out successfully");
-        } catch (err) {
-            console.error("Logout error:", err);
-            toast.error("Failed to logout");
-        } finally {
-            localStorage.removeItem("sessionId");
-            localStorage.removeItem("schoolName");
-            loading = false;
-            goto("/");
-        }
-    }
 
     async function searchExams() {
         if (!startDate || !endDate) {
@@ -118,9 +90,8 @@
                 if (response.status === 401) {
                     error = "Session expired. Please log in again.";
                     toast.error(error);
+                    authStore.logout();
                     setTimeout(() => {
-                        localStorage.removeItem("sessionId");
-                        localStorage.removeItem("schoolName");
                         goto("/");
                     }, 2000);
                     return;
@@ -237,64 +208,7 @@
 </script>
 
 <div class="min-h-screen bg-background">
-    <header class="border-b">
-        <div class="container mx-auto px-4 lg:px-8">
-            <div class="flex h-16 items-center justify-between">
-                <div class="flex items-center space-x-6">
-                    <div class="flex items-center space-x-2">
-                        <School class="h-6 w-6 text-primary" />
-                        <span class="text-xl font-semibold">Examin</span>
-                    </div>
-                    <NavigationMenuRoot class="hidden md:flex">
-                        <NavigationMenuList>
-                            <NavigationMenuItem>
-                                <NavigationMenuLink
-                                    href="/dashboard"
-                                    class="
-                                        group inline-flex h-9 w-max items-center justify-center
-                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
-                                        hover:bg-accent hover:text-accent-foreground
-                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
-                                        disabled:pointer-events-none disabled:opacity-50
-                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
-                                        text-muted-foreground
-                                    "
-                                >
-                                    Dashboard
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-                            <NavigationMenuItem>
-                                <NavigationMenuLink
-                                    href="/exams"
-                                    class="
-                                        group inline-flex h-9 w-max items-center justify-center
-                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
-                                        hover:bg-accent hover:text-accent-foreground
-                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
-                                        disabled:pointer-events-none disabled:opacity-50
-                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
-                                    "
-                                >
-                                    Exams
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-                        </NavigationMenuList>
-                    </NavigationMenuRoot>
-                </div>
-
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onclick={handleLogout}
-                    disabled={loading}
-                    class="ml-2"
-                >
-                    <LogOut class="h-4 w-4 mr-1" />
-                    {loading ? "Logging out..." : "Logout"}
-                </Button>
-            </div>
-        </div>
-    </header>
+    <Navbar />
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div class="px-4 py-6 sm:px-0 space-y-6">
