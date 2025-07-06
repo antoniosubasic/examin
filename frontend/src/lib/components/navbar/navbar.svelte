@@ -60,10 +60,13 @@
     <div class="container mx-auto px-4 lg:px-8">
         <div class="flex h-16 items-center justify-between">
             <div class="flex items-center space-x-6">
-                <div class="flex items-center space-x-2">
+                <a
+                    class="flex items-center space-x-2 px-2 py-4 hover:cursor-pointer"
+                    href="/"
+                >
                     <School class="h-6 w-6 text-primary" />
                     <span class="text-xl font-semibold">Examin</span>
-                </div>
+                </a>
                 <NavigationMenuRoot class="hidden md:flex">
                     <NavigationMenuList>
                         {#each ["/dashboard", "/exams"] as link}
