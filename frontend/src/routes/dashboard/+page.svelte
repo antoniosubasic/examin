@@ -18,7 +18,7 @@
 
     let showFullSessionId = false;
 
-    $: ({ sessionId, schoolName, isAuthenticated } = $authStore);
+    $: ({ sessionId, schoolName } = $authStore);
 
     onMount(() => {
         authStore.init();
@@ -28,7 +28,7 @@
             localStorage.removeItem("justLoggedIn");
         }
 
-        if (!isAuthenticated) {
+        if (!$authStore.isAuthenticated) {
             goto("/");
         }
     });

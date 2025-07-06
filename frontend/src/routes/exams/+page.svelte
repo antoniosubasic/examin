@@ -32,12 +32,12 @@
     let endDate = "";
     let exams: Exam[] = [];
 
-    $: ({ sessionId, isAuthenticated } = $authStore);
+    $: ({ sessionId } = $authStore);
 
     onMount(() => {
         authStore.init();
 
-        if (!isAuthenticated) {
+        if (!$authStore.isAuthenticated) {
             goto("/");
             return;
         }
