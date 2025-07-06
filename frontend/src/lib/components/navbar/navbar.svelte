@@ -10,10 +10,11 @@
     } from "$lib/components/ui/navigation-menu";
     import { toast } from "svelte-sonner";
     import { toggleMode } from "mode-watcher";
-    import { School, LogOut, MoonIcon, SunIcon } from "@lucide/svelte";
+    import { School, LogOut, MoonIcon, SunIcon, Menu, X } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
 
     let loading = false;
+    let mobileMenuOpen = false;
 
     $: ({ sessionId } = $authStore);
     $: currentPath = page.url.pathname;
@@ -44,7 +45,7 @@
 <header class="border-b">
     <div class="container mx-auto px-4 lg:px-8">
         <div class="flex h-16 items-center justify-between">
-            <div class="flex items-center space-x-6">
+            <div class="flex items-center">
                 <a
                     class="flex items-center space-x-2 px-2 py-4 hover:cursor-pointer"
                     href="/"
@@ -52,34 +53,35 @@
                     <School class="h-6 w-6 text-primary" />
                     <span class="text-xl font-semibold">Examin</span>
                 </a>
-                <NavigationMenuRoot class="hidden md:flex">
-                    <NavigationMenuList>
-                        {#each ["/dashboard", "/exams"] as link}
-                            <NavigationMenuItem>
-                                <NavigationMenuLink
-                                    href={link}
-                                    class={[
-                                        `group inline-flex h-9 w-max items-center justify-center
-                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
-                                        hover:bg-accent hover:text-accent-foreground
-                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
-                                        disabled:pointer-events-none disabled:opacity-50
-                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50`,
-                                        currentPath === link ||
-                                        currentPath.startsWith(`${link}/`)
-                                            ? ""
-                                            : "text-muted-foreground",
-                                    ]}
-                                >
-                                    {`${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`}
-                                </NavigationMenuLink>
-                            </NavigationMenuItem>
-                        {/each}
-                    </NavigationMenuList>
-                </NavigationMenuRoot>
             </div>
 
-            <div>
+            <NavigationMenuRoot class="hidden md:flex">
+                <NavigationMenuList>
+                    {#each ["/dashboard", "/exams"] as link}
+                        <NavigationMenuItem>
+                            <NavigationMenuLink
+                                href={link}
+                                class={[
+                                    `group inline-flex h-9 w-max items-center justify-center
+                                    rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
+                                    hover:bg-accent hover:text-accent-foreground
+                                    focus:bg-accent focus:text-accent-foreground focus:outline-none
+                                    disabled:pointer-events-none disabled:opacity-50
+                                    data-[active]:bg-accent/50 data-[state=open]:bg-accent/50`,
+                                    currentPath === link ||
+                                    currentPath.startsWith(`${link}/`)
+                                        ? ""
+                                        : "text-muted-foreground",
+                                ]}
+                            >
+                                {`${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`}
+                            </NavigationMenuLink>
+                        </NavigationMenuItem>
+                    {/each}
+                </NavigationMenuList>
+            </NavigationMenuRoot>
+
+            <div class="hidden md:flex items-center space-x-2">
                 <Button onclick={toggleMode} variant="outline" size="icon">
                     <SunIcon
                         class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 !transition-all dark:-rotate-90 dark:scale-0"
@@ -94,12 +96,73 @@
                     size="sm"
                     onclick={handleLogout}
                     disabled={loading}
-                    class="ml-2"
                 >
                     <LogOut class="h-4 w-4 mr-1" />
                     {loading ? "Logging out..." : "Logout"}
                 </Button>
             </div>
+
+            <div class="md:hidden">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+                    aria-label="Toggle menu"
+                >
+                    {#if mobileMenuOpen}
+                        <X class="h-6 w-6" />
+                    {:else}
+                        <Menu class="h-6 w-6" />
+                    {/if}
+                </Button>
+            </div>
         </div>
+
+        {#if mobileMenuOpen}
+            <div class="md:hidden border-t">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    {#each ["/dashboard", "/exams"] as link}
+                        <a
+                            href={link}
+                            onclick={() => (mobileMenuOpen = false)}
+                            class={[
+                                `block px-3 py-2 rounded-md text-base font-medium transition-colors
+                                hover:bg-accent hover:text-accent-foreground`,
+                                currentPath === link ||
+                                currentPath.startsWith(`${link}/`)
+                                    ? "bg-accent text-accent-foreground"
+                                    : "text-muted-foreground",
+                            ]}
+                        >
+                            {`${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`}
+                        </a>
+                    {/each}
+                </div>
+
+                <div
+                    class="px-2 pb-3 border-t pt-3 flex items-center space-x-2"
+                >
+                    <Button onclick={toggleMode} variant="outline" size="icon">
+                        <SunIcon
+                            class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 !transition-all dark:-rotate-90 dark:scale-0"
+                        />
+                        <MoonIcon
+                            class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 !transition-all dark:rotate-0 dark:scale-100"
+                        />
+                        <span class="sr-only">Toggle theme</span>
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onclick={handleLogout}
+                        disabled={loading}
+                        class="flex-1"
+                    >
+                        <LogOut class="h-4 w-4 mr-1" />
+                        {loading ? "Logging out..." : "Logout"}
+                    </Button>
+                </div>
+            </div>
+        {/if}
     </div>
 </header>
