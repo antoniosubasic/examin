@@ -1,6 +1,36 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { toast } from "svelte-sonner";
+    import { Button } from "$lib/components/ui/button";
+    import {
+        Card,
+        CardContent,
+        CardDescription,
+        CardHeader,
+        CardTitle,
+    } from "$lib/components/ui/card";
+    import { Input } from "$lib/components/ui/input";
+    import { Label } from "$lib/components/ui/label";
+    import { Badge } from "$lib/components/ui/badge";
+    import { Alert, AlertDescription } from "$lib/components/ui/alert";
+    import {
+        Table,
+        TableBody,
+        TableCell,
+        TableHead,
+        TableHeader,
+        TableRow,
+    } from "$lib/components/ui/table";
+    import {
+        NavigationMenuRoot,
+        NavigationMenuItem,
+        NavigationMenuLink,
+        NavigationMenuList,
+    } from "$lib/components/ui/navigation-menu";
+    import { Skeleton } from "$lib/components/ui/skeleton";
+    import { Separator } from "$lib/components/ui/separator";
+    import { School, LogOut, FileTextIcon } from "@lucide/svelte";
 
     let sessionId = "";
     let schoolName = "";
@@ -41,8 +71,10 @@
                 },
                 body: JSON.stringify({ sessionId }),
             });
+            toast.success("Logged out successfully");
         } catch (err) {
             console.error("Logout error:", err);
+            toast.error("Failed to logout");
         } finally {
             localStorage.removeItem("sessionId");
             localStorage.removeItem("schoolName");
@@ -54,11 +86,13 @@
     async function searchExams() {
         if (!startDate || !endDate) {
             error = "Please select both start and end dates";
+            toast.error(error);
             return;
         }
 
         if (new Date(startDate) > new Date(endDate)) {
             error = "Start date must be before end date";
+            toast.error(error);
             return;
         }
 
@@ -83,6 +117,7 @@
                 const errorData = await response.json();
                 if (response.status === 401) {
                     error = "Session expired. Please log in again.";
+                    toast.error(error);
                     setTimeout(() => {
                         localStorage.removeItem("sessionId");
                         localStorage.removeItem("schoolName");
@@ -96,8 +131,12 @@
             }
 
             exams = await response.json();
+            toast.success(
+                `Found ${exams.length} ${exams.length === 1 ? "exam" : "exams"}`
+            );
         } catch (err) {
             error = `Failed to search exams: ${err instanceof Error ? err.message : "Unknown error"}`;
+            toast.error(error);
             console.error("Search error:", err);
         } finally {
             searching = false;
@@ -112,18 +151,21 @@
         return timeString.substring(0, 5);
     }
 
-    function getExamTypeColor(type: string): string {
+    function getExamTypeVariant(
+        type: string
+    ): "default" | "secondary" | "destructive" | "outline" {
         switch (type?.toLowerCase()) {
             case "schularbeit":
             case "test":
-                return "bg-red-100 text-red-800";
+                return "destructive";
             default:
-                return "bg-gray-100 text-gray-800";
+                return "secondary";
         }
     }
 
     function exportToCsv() {
         if (exams.length === 0) {
+            toast.error("No exams to export");
             return;
         }
 
@@ -189,232 +231,232 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            toast.success("Successfully exported to CSV");
         }
     }
 </script>
 
-<div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow-xs border-b border-gray-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <nav class="flex items-center space-x-4">
-                    <a
-                        href="/dashboard"
-                        class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                        Dashboard
-                    </a>
-                    <a
-                        href="/exams"
-                        class="bg-gray-100 text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                        Exams
-                    </a>
-                </nav>
-                <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-600">{schoolName}</span>
-                    <button
-                        on:click={handleLogout}
-                        disabled={loading}
-                        class="
-                            px-3 py-2 text-sm bg-red-600 text-white rounded-md
-                            hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
-                            disabled:opacity-50
-                        "
-                    >
-                        {loading ? "Logging out..." : "Logout"}
-                    </button>
+<div class="min-h-screen bg-background">
+    <header class="border-b">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-2">
+                        <School class="h-6 w-6 text-primary" />
+                        <span class="text-xl font-semibold">Examin</span>
+                    </div>
+                    <NavigationMenuRoot class="hidden md:flex">
+                        <NavigationMenuList>
+                            <NavigationMenuItem>
+                                <NavigationMenuLink
+                                    href="/dashboard"
+                                    class="
+                                        group inline-flex h-9 w-max items-center justify-center
+                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
+                                        hover:bg-accent hover:text-accent-foreground
+                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
+                                        disabled:pointer-events-none disabled:opacity-50
+                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
+                                        text-muted-foreground
+                                    "
+                                >
+                                    Dashboard
+                                </NavigationMenuLink>
+                            </NavigationMenuItem>
+                            <NavigationMenuItem>
+                                <NavigationMenuLink
+                                    href="/exams"
+                                    class="
+                                        group inline-flex h-9 w-max items-center justify-center
+                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
+                                        hover:bg-accent hover:text-accent-foreground
+                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
+                                        disabled:pointer-events-none disabled:opacity-50
+                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
+                                    "
+                                >
+                                    Exams
+                                </NavigationMenuLink>
+                            </NavigationMenuItem>
+                        </NavigationMenuList>
+                    </NavigationMenuRoot>
                 </div>
+
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={handleLogout}
+                    disabled={loading}
+                    class="ml-2"
+                >
+                    <LogOut class="h-4 w-4 mr-1" />
+                    {loading ? "Logging out..." : "Logout"}
+                </Button>
             </div>
         </div>
-    </nav>
+    </header>
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0">
-            <div class="bg-white rounded-lg shadow p-6 mb-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">
-                    Search Exams
-                </h2>
+        <div class="px-4 py-6 sm:px-0 space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Search Exams</CardTitle>
+                    <CardDescription>
+                        Find exams within a specific date range
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <div class="space-y-2">
+                            <Label for="startDate">Start Date</Label>
+                            <Input
+                                id="startDate"
+                                type="date"
+                                bind:value={startDate}
+                                disabled={searching}
+                            />
+                        </div>
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div>
-                        <label
-                            for="startDate"
-                            class="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            Start Date
-                        </label>
-                        <input
-                            id="startDate"
-                            type="date"
-                            bind:value={startDate}
-                            class="
-                                block w-full border border-gray-300 rounded-md px-3 py-2
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                            "
-                            disabled={searching}
-                        />
-                    </div>
+                        <div class="space-y-2">
+                            <Label for="endDate">End Date</Label>
+                            <Input
+                                id="endDate"
+                                type="date"
+                                bind:value={endDate}
+                                disabled={searching}
+                            />
+                        </div>
 
-                    <div>
-                        <label
-                            for="endDate"
-                            class="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                            End Date
-                        </label>
-                        <input
-                            id="endDate"
-                            type="date"
-                            bind:value={endDate}
-                            class="
-                                block w-full border border-gray-300 rounded-md px-3 py-2
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                            "
-                            disabled={searching}
-                        />
-                    </div>
-
-                    <div class="flex items-end">
-                        <button
-                            on:click={searchExams}
-                            disabled={searching || !startDate || !endDate}
-                            class="
-                                w-full px-4 py-2 bg-blue-600 text-white rounded-md
-                                hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                                disabled:opacity-50 disabled:cursor-not-allowed
-                            "
-                        >
-                            {searching ? "Searching..." : "Search Exams"}
-                        </button>
-                    </div>
-                </div>
-
-                {#if error}
-                    <div
-                        class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
-                    >
-                        {error}
-                    </div>
-                {/if}
-            </div>
-
-            {#if exams.length > 0}
-                <div class="bg-white rounded-lg shadow">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-medium text-gray-900">
-                                Found {exams.length}
-                                {exams.length === 1 ? "entry" : "entries"}
-                            </h3>
-                            <button
-                                on:click={exportToCsv}
-                                class="
-                                    px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium
-                                    hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2
-                                    transition-colors duration-200
-                                "
-                                title="Export exams to CSV file"
+                        <div class="flex items-end">
+                            <Button
+                                class="w-full"
+                                onclick={searchExams}
+                                disabled={searching || !startDate || !endDate}
                             >
-                                Save as CSV
-                            </button>
+                                {searching ? "Searching..." : "Search Exams"}
+                            </Button>
                         </div>
                     </div>
 
-                    <div class="divide-y divide-gray-200">
-                        {#each exams as exam}
-                            <div class="px-6 py-4 hover:bg-gray-50">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex-1">
-                                        <div
-                                            class="flex items-center space-x-3"
-                                        >
-                                            <h4
-                                                class="text-lg font-medium text-gray-900"
-                                            >
-                                                {exam.name || "Unnamed Exam"}
-                                            </h4>
-                                            {#if exam.examType}
-                                                <span
-                                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {getExamTypeColor(
-                                                        exam.examType
-                                                    )}"
-                                                >
-                                                    {exam.examType}
-                                                </span>
-                                            {/if}
-                                        </div>
+                    {#if error}
+                        <Alert variant="destructive" class="mt-4">
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    {/if}
+                </CardContent>
+            </Card>
 
-                                        {#if exam.subject}
-                                            <div class="mt-2">
-                                                <span
-                                                    class="inline-block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"
-                                                >
-                                                    Subject
-                                                </span>
-                                                <p
-                                                    class="text-sm text-gray-800 font-medium"
-                                                >
-                                                    {exam.subject}
-                                                </p>
-                                            </div>
-                                        {/if}
-
-                                        {#if exam.text}
-                                            <div class="mt-3">
-                                                <span
-                                                    class="inline-block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"
-                                                >
-                                                    Description
-                                                </span>
-                                                <p
-                                                    class="text-sm text-gray-700 leading-relaxed"
-                                                >
-                                                    {exam.text}
-                                                </p>
-                                            </div>
-                                        {/if}
-                                    </div>
-
-                                    <div class="ml-4 text-right">
-                                        <p
-                                            class="text-sm font-medium text-gray-900"
-                                        >
-                                            {formatDate(exam.examDate)}
-                                        </p>
-                                        <p class="text-sm text-gray-600">
-                                            {formatTime(exam.startTime)} - {formatTime(
-                                                exam.endTime
-                                            )}
-                                        </p>
-                                    </div>
-                                </div>
+            {#if searching}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>
+                            <Skeleton class="h-6 w-32" />
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        {#each Array(3) as _}
+                            <div class="space-y-2">
+                                <Skeleton class="h-4 w-full" />
+                                <Skeleton class="h-4 w-3/4" />
+                                <Skeleton class="h-4 w-1/2" />
                             </div>
+                            <Separator />
                         {/each}
-                    </div>
-                </div>
-            {:else if exams.length === 0 && !searching && !error && startDate && endDate}
-                <div class="bg-white rounded-lg shadow p-6 text-center">
-                    <svg
-                        class="mx-auto h-12 w-12 text-gray-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                    >
-                        <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    </CardContent>
+                </Card>
+            {:else if exams.length > 0}
+                <Card>
+                    <CardHeader>
+                        <div class="flex items-center justify-between">
+                            <CardTitle class="text-xl">
+                                Found {exams.length}
+                                {exams.length === 1 ? "exam" : "exams"}
+                            </CardTitle>
+                            <Button onclick={exportToCsv}>Export CSV</Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead class="text-lg">Exam</TableHead>
+                                    <TableHead class="text-lg">Subject</TableHead>
+                                    <TableHead class="text-lg">Date</TableHead>
+                                    <TableHead class="text-lg">Time</TableHead>
+                                    <TableHead class="text-lg">Description</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {#each exams as exam}
+                                    <TableRow>
+                                        <TableCell>
+                                            <div class="flex gap-3">
+                                                <span class="font-medium">
+                                                    {exam.name ||
+                                                        "Unnamed Exam"}
+                                                </span>
+                                                {#if exam.examType}
+                                                    <Badge
+                                                        variant={getExamTypeVariant(
+                                                            exam.examType
+                                                        )}
+                                                    >
+                                                        {exam.examType}
+                                                    </Badge>
+                                                {/if}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span
+                                                class="font-medium text-foreground"
+                                            >
+                                                {exam.subject || "—"}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span class="text-sm">
+                                                {formatDate(exam.examDate)}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div
+                                                class="text-sm flex flex-col gap-1"
+                                            >
+                                                <p>
+                                                    {formatTime(exam.startTime)}
+                                                </p>
+                                                <p>
+                                                    {formatTime(exam.endTime)}
+                                                </p>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <span
+                                                class="text-sm text-muted-foreground"
+                                            >
+                                                {exam.text || "—"}
+                                            </span>
+                                        </TableCell>
+                                    </TableRow>
+                                {/each}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            {:else if !searching && !error && startDate && endDate}
+                <Card>
+                    <CardContent class="text-center py-12">
+                        <FileTextIcon
+                            class="mx-auto h-12 w-12 text-muted-foreground mb-4"
                         />
-                    </svg>
-                    <h3 class="mt-2 text-sm font-medium text-gray-900">
-                        No exams found
-                    </h3>
-                    <p class="mt-1 text-sm text-gray-500">
-                        No exams were found for the selected date range.
-                    </p>
-                </div>
+                        <CardTitle class="text-muted-foreground"
+                            >No exams found</CardTitle
+                        >
+                        <CardDescription class="mt-2">
+                            No exams were found for the selected date range.
+                        </CardDescription>
+                    </CardContent>
+                </Card>
             {/if}
         </div>
     </main>
