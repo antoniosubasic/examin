@@ -6,6 +6,7 @@
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
     import { toast } from "svelte-sonner";
+    import { LightDarkToggle } from "$lib/components/light-dark-toggle";
 
     let searchQuery = "";
     let schools: School[] = [];
@@ -57,7 +58,13 @@
     }
 </script>
 
-<div class="min-h-[100dvh] flex items-center justify-center px-4 py-12">
+<div
+    class="min-h-[100dvh] flex items-center justify-center px-4 py-12 relative"
+>
+    <div class="absolute top-4 right-4">
+        <LightDarkToggle />
+    </div>
+
     <div class="w-full max-w-md space-y-8">
         <div class="text-center">
             <h1 class="text-4xl font-bold tracking-tight">Find Your School</h1>
