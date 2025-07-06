@@ -52,12 +52,10 @@
             </div>
 
             {#if showLoginAlert}
-                <Alert class="border-green-200 bg-green-50">
-                    <CheckCircle2Icon color="#016630" />
-                    <AlertTitle class="text-green-800"
-                        >Login Successful</AlertTitle
-                    >
-                    <AlertDescription class="text-green-700">
+                <Alert>
+                    <CheckCircle2Icon />
+                    <AlertTitle>Login Successful</AlertTitle>
+                    <AlertDescription>
                         Your session is active. You can now access your data.
                     </AlertDescription>
                 </Alert>
