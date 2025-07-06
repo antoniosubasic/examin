@@ -2,6 +2,18 @@
     import { page } from "$app/state";
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
+    import { Button } from "$lib/components/ui/button";
+    import {
+        Card,
+        CardContent,
+        CardDescription,
+        CardHeader,
+        CardTitle,
+    } from "$lib/components/ui/card";
+    import { Input } from "$lib/components/ui/input";
+    import { Label } from "$lib/components/ui/label";
+    import { Alert, AlertDescription } from "$lib/components/ui/alert";
+    import { ChevronLeft, AlertCircleIcon } from "@lucide/svelte";
 
     let schoolName = "";
     let schoolLoginName = "";
@@ -76,100 +88,66 @@
     }
 </script>
 
-<div
-    class="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8"
->
-    <div class="max-w-md w-full">
-        <button
-            on:click={goBack}
-            class="inline-flex items-center text-blue-600 hover:text-blue-800 mb-8 cursor-pointer"
-        >
-            <svg
-                class="w-4 h-4 mr-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M15 19l-7-7 7-7"
-                ></path>
-            </svg>
+<div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-6">
+        <Button variant="ghost" onclick={goBack}>
+            <ChevronLeft />
             Back to search
-        </button>
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Login</h1>
-            <p class="text-gray-600">{schoolName}</p>
-        </div>
+        </Button>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <form on:submit|preventDefault={handleLogin} class="space-y-4">
-                <div>
-                    <label
-                        for="username"
-                        class="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                        Username
-                    </label>
-                    <input
-                        id="username"
-                        type="text"
-                        bind:value={username}
-                        on:keypress={handleKeyPress}
-                        placeholder="Enter your username"
-                        class="
-                            w-full border border-gray-300 rounded-md px-3 py-2
-                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                        "
-                        disabled={loading}
-                        required
-                    />
-                </div>
-
-                <div>
-                    <label
-                        for="password"
-                        class="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                        Password
-                    </label>
-                    <input
-                        id="password"
-                        type="password"
-                        bind:value={password}
-                        on:keypress={handleKeyPress}
-                        placeholder="Enter your password"
-                        class="
-                            w-full border border-gray-300 rounded-md px-3 py-2
-                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                        "
-                        disabled={loading}
-                        required
-                    />
-                </div>
-
-                {#if error}
-                    <div
-                        class="p-3 bg-red-100 border border-red-400 text-red-700 rounded"
-                    >
-                        {error}
+        <Card>
+            <CardHeader>
+                <CardTitle class="text-[1.75rem]">Login</CardTitle>
+                <CardDescription class="text-base">
+                    {schoolName}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form on:submit|preventDefault={handleLogin} class="space-y-4">
+                    <div class="space-y-2">
+                        <Label for="username">Username</Label>
+                        <Input
+                            id="username"
+                            type="text"
+                            bind:value={username}
+                            onkeypress={handleKeyPress}
+                            placeholder="Enter your username"
+                            disabled={loading}
+                            required
+                        />
                     </div>
-                {/if}
 
-                <button
-                    type="submit"
-                    disabled={loading || !username.trim() || !password.trim()}
-                    class="
-                        w-full py-2 px-4 mt-4 bg-blue-600 text-white rounded-md
-                        hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                        disabled:opacity-50 disabled:cursor-not-allowed transition-colors
-                    "
-                >
-                    {loading ? "Logging in..." : "Login"}
-                </button>
-            </form>
-        </div>
+                    <div class="space-y-2">
+                        <Label for="password">Password</Label>
+                        <Input
+                            id="password"
+                            type="password"
+                            bind:value={password}
+                            onkeypress={handleKeyPress}
+                            placeholder="Enter your password"
+                            disabled={loading}
+                            required
+                        />
+                    </div>
+
+                    {#if error}
+                        <Alert variant="destructive">
+                            <AlertCircleIcon />
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    {/if}
+
+                    <Button
+                        type="submit"
+                        disabled={loading ||
+                            !username.trim() ||
+                            !password.trim()}
+                        class="w-full"
+                    >
+                        {loading ? "Logging in..." : "Login"}
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
     </div>
 </div>
