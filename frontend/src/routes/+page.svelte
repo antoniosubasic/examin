@@ -1,6 +1,12 @@
 <script lang="ts">
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
+    import { Button } from "$lib/components/ui/button";
+    import { Card, CardContent } from "$lib/components/ui/card";
+    import { Input } from "$lib/components/ui/input";
+    import { Label } from "$lib/components/ui/label";
+    import { Alert, AlertDescription } from "$lib/components/ui/alert";
+    import { AlertCircle } from "@lucide/svelte";
 
     let searchQuery = "";
     let schools: School[] = [];
@@ -63,78 +69,64 @@
     }
 </script>
 
-<div
-    class="min-h-screen flex items-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
->
-    <div class="max-w-md mx-auto">
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Search School</h1>
-            <p class="text-gray-600">Search for your school to get started</p>
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md space-y-8">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold tracking-tight">Find Your School</h1>
         </div>
 
-        <div class="min-w-md bg-white rounded-lg shadow-md p-6">
-            <div class="mb-4">
-                <label
-                    for="search"
-                    class="block text-sm font-medium text-gray-700 mb-2"
-                >
-                    School Name or Location
-                </label>
-                <div class="flex gap-2">
-                    <input
-                        id="search"
-                        type="text"
-                        bind:value={searchQuery}
-                        on:keypress={handleKeyPress}
-                        placeholder="school name or location..."
-                        class="
-                            flex-1 border border-gray-300 rounded-md px-3 py-2
-                            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                        "
-                        disabled={loading}
-                    />
-                    <button
-                        on:click={searchSchools}
-                        disabled={loading || !searchQuery.trim()}
-                        class="
-                            min-w-30 px-4 py-2 bg-blue-600 text-white rounded-md
-                            hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                            disabled:opacity-50 disabled:cursor-not-allowed
-                        "
-                    >
-                        {loading ? "Searching..." : "Search"}
-                    </button>
-                </div>
-            </div>
-
-            {#if error}
-                <div
-                    class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded"
-                >
-                    {error}
-                </div>
-            {/if}
-
-            {#if schools.length > 0}
+        <Card>
+            <CardContent class="space-y-4">
                 <div class="space-y-2">
-                    {#each schools as school}
-                        <button
-                            on:click={() => selectSchool(school)}
-                            class="
-                                w-full text-left p-3 border border-gray-200 rounded-md hover:bg-gray-50 hover:border-gray-300
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors
-                            "
+                    <Label for="search">School Name or Location</Label>
+                    <div class="flex gap-2">
+                        <Input
+                            id="search"
+                            type="text"
+                            bind:value={searchQuery}
+                            placeholder="Enter School Name or Location..."
+                            disabled={loading}
+                            class="flex-1"
+                            onkeypress={handleKeyPress}
+                        />
+                        <Button
+                            disabled={loading || !searchQuery.trim()}
+                            class="px-6"
+                            onclick={searchSchools}
                         >
-                            <div class="font-medium text-gray-900">
-                                {school.displayName}
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                {school.loginName}
-                            </div>
-                        </button>
-                    {/each}
+                            {loading ? "Searching..." : "Search"}
+                        </Button>
+                    </div>
                 </div>
-            {/if}
-        </div>
+
+                {#if error}
+                    <Alert variant="destructive">
+                        <AlertCircle />
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                {/if}
+
+                {#if schools.length > 0}
+                    <div class="space-y-2 max-h-64 overflow-y-auto">
+                        {#each schools as school}
+                            <Button
+                                variant="outline"
+                                class="w-full justify-start h-auto p-4 text-left"
+                                onclick={() => selectSchool(school)}
+                            >
+                                <div class="flex flex-col items-start">
+                                    <div class="font-medium">
+                                        {school.displayName}
+                                    </div>
+                                    <div class="text-sm text-slate-500">
+                                        {school.loginName}
+                                    </div>
+                                </div>
+                            </Button>
+                        {/each}
+                    </div>
+                {/if}
+            </CardContent>
+        </Card>
     </div>
 </div>
