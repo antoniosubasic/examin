@@ -55,18 +55,6 @@
             loading = false;
         }
     }
-
-    function selectSchool(school: School) {
-        goto(
-            `/login?school=${encodeURIComponent(school.loginName)}&name=${encodeURIComponent(school.displayName)}`
-        );
-    }
-
-    function handleKeyPress(event: KeyboardEvent) {
-        if (event.key === "Enter") {
-            searchSchools();
-        }
-    }
 </script>
 
 <div class="min-h-[100dvh] flex items-center justify-center px-4 py-12">
@@ -87,7 +75,9 @@
                             placeholder="Enter School Name or Location..."
                             disabled={loading}
                             class="flex-1"
-                            onkeypress={handleKeyPress}
+                            onkeypress={(event) => {
+                                if (event.key === "Enter") searchSchools();
+                            }}
                         />
                         <Button
                             disabled={loading || !searchQuery.trim()}
@@ -112,7 +102,10 @@
                             <Button
                                 variant="outline"
                                 class="w-full justify-start h-auto p-4 text-left"
-                                onclick={() => selectSchool(school)}
+                                onclick={() =>
+                                    goto(
+                                        `/login?school=${encodeURIComponent(school.loginName)}&name=${encodeURIComponent(school.displayName)}`
+                                    )}
                             >
                                 <div class="flex flex-col items-start">
                                     <div class="font-medium">
