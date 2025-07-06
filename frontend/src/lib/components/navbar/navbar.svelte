@@ -9,9 +9,9 @@
         NavigationMenuList,
     } from "$lib/components/ui/navigation-menu";
     import { toast } from "svelte-sonner";
-    import { toggleMode } from "mode-watcher";
-    import { School, LogOut, MoonIcon, SunIcon, Menu, X } from "@lucide/svelte";
+    import { School, LogOut, Menu, X } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
+    import { LightDarkToggle } from "$lib/components/light-dark-toggle";
 
     let loading = false;
     let mobileMenuOpen = false;
@@ -87,15 +87,7 @@
             </NavigationMenuRoot>
 
             <div class="hidden md:flex items-center space-x-2">
-                <Button onclick={toggleMode} variant="outline" size="icon">
-                    <SunIcon
-                        class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 !transition-all dark:-rotate-90 dark:scale-0"
-                    />
-                    <MoonIcon
-                        class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 !transition-all dark:rotate-0 dark:scale-100"
-                    />
-                    <span class="sr-only">Toggle theme</span>
-                </Button>
+                <LightDarkToggle />
                 <Button
                     variant="outline"
                     size="sm"
@@ -146,15 +138,7 @@
                 <div
                     class="px-2 pb-3 border-t pt-3 flex items-center space-x-2"
                 >
-                    <Button onclick={toggleMode} variant="outline" size="icon">
-                        <SunIcon
-                            class="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 !transition-all dark:-rotate-90 dark:scale-0"
-                        />
-                        <MoonIcon
-                            class="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 !transition-all dark:rotate-0 dark:scale-100"
-                        />
-                        <span class="sr-only">Toggle theme</span>
-                    </Button>
+                    <LightDarkToggle />
                     <Button
                         variant="outline"
                         size="sm"
