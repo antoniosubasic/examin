@@ -19,6 +19,12 @@
     $: ({ sessionId } = $authStore);
     $: currentPath = page.url.pathname;
 
+    $: linkData = ["/dashboard", "/exams"].map((link) => ({
+        href: link,
+        label: `${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`,
+        isActive: currentPath === link || currentPath.startsWith(`${link}/`),
+    }));
+
     async function handleLogout() {
         loading = true;
 
@@ -57,10 +63,10 @@
 
             <NavigationMenuRoot class="hidden md:flex">
                 <NavigationMenuList>
-                    {#each ["/dashboard", "/exams"] as link}
+                    {#each linkData as link}
                         <NavigationMenuItem>
                             <NavigationMenuLink
-                                href={link}
+                                href={link.href}
                                 class={[
                                     `group inline-flex h-9 w-max items-center justify-center
                                     rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
@@ -68,13 +74,12 @@
                                     focus:bg-accent focus:text-accent-foreground focus:outline-none
                                     disabled:pointer-events-none disabled:opacity-50
                                     data-[active]:bg-accent/50 data-[state=open]:bg-accent/50`,
-                                    currentPath === link ||
-                                    currentPath.startsWith(`${link}/`)
+                                    link.isActive
                                         ? ""
                                         : "text-muted-foreground",
                                 ]}
                             >
-                                {`${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`}
+                                {link.label}
                             </NavigationMenuLink>
                         </NavigationMenuItem>
                     {/each}
@@ -121,20 +126,19 @@
         {#if mobileMenuOpen}
             <div class="md:hidden border-t">
                 <div class="px-2 pt-2 pb-3 space-y-1">
-                    {#each ["/dashboard", "/exams"] as link}
+                    {#each linkData as link}
                         <a
-                            href={link}
+                            href={link.href}
                             onclick={() => (mobileMenuOpen = false)}
                             class={[
                                 `block px-3 py-2 rounded-md text-base font-medium transition-colors
                                 hover:bg-accent hover:text-accent-foreground`,
-                                currentPath === link ||
-                                currentPath.startsWith(`${link}/`)
+                                link.isActive
                                     ? "bg-accent text-accent-foreground"
                                     : "text-muted-foreground",
                             ]}
                         >
-                            {`${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`}
+                            {link.label}
                         </a>
                     {/each}
                 </div>
