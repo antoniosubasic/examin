@@ -1,6 +1,28 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
+    import { Button } from "$lib/components/ui/button";
+    import {
+        Card,
+        CardContent,
+        CardDescription,
+        CardHeader,
+        CardTitle,
+    } from "$lib/components/ui/card";
+    import {
+        Alert,
+        AlertDescription,
+        AlertTitle,
+    } from "$lib/components/ui/alert";
+    import { Separator } from "$lib/components/ui/separator";
+    import { Label } from "$lib/components/ui/label";
+    import {
+        NavigationMenuRoot,
+        NavigationMenuItem,
+        NavigationMenuLink,
+        NavigationMenuList,
+    } from "$lib/components/ui/navigation-menu";
+    import { BookOpen, CheckCircle2Icon, School, LogOut } from "@lucide/svelte";
 
     let sessionId = "";
     let schoolName = "";
@@ -44,155 +66,169 @@
     }
 </script>
 
-<div class="min-h-screen bg-gray-50">
-    <nav class="bg-white shadow-xs border-b border-gray-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <nav class="flex items-center space-x-4">
-                    <a
-                        href="/dashboard"
-                        class="bg-gray-100 text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                        Dashboard
-                    </a>
-                    <a
-                        href="/exams"
-                        class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                    >
-                        Exams
-                    </a>
-                </nav>
-                <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-600">{schoolName}</span>
-                    <button
-                        on:click={handleLogout}
-                        disabled={loading}
-                        class="
-                            px-3 py-2 text-sm bg-red-600 text-white rounded-md
-                            hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
-                            disabled:opacity-50
-                        "
-                    >
-                        {loading ? "Logging out..." : "Logout"}
-                    </button>
+<div class="min-h-screen">
+    <header class="border-b">
+        <div class="container mx-auto px-4 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-2">
+                        <School class="h-6 w-6 text-primary" />
+                        <span class="text-xl font-semibold">Examin</span>
+                    </div>
+                    <NavigationMenuRoot class="hidden md:flex">
+                        <NavigationMenuList>
+                            <NavigationMenuItem>
+                                <NavigationMenuLink
+                                    href="/dashboard"
+                                    class="
+                                        group inline-flex h-9 w-max items-center justify-center
+                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
+                                        hover:bg-accent hover:text-accent-foreground
+                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
+                                        disabled:pointer-events-none disabled:opacity-50
+                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
+                                    "
+                                >
+                                    Dashboard
+                                </NavigationMenuLink>
+                            </NavigationMenuItem>
+                            <NavigationMenuItem>
+                                <NavigationMenuLink
+                                    href="/exams"
+                                    class="
+                                        group inline-flex h-9 w-max items-center justify-center
+                                        rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors
+                                        hover:bg-accent hover:text-accent-foreground
+                                        focus:bg-accent focus:text-accent-foreground focus:outline-none
+                                        disabled:pointer-events-none disabled:opacity-50
+                                        data-[active]:bg-accent/50 data-[state=open]:bg-accent/50
+                                        text-muted-foreground
+                                    "
+                                >
+                                    Exams
+                                </NavigationMenuLink>
+                            </NavigationMenuItem>
+                        </NavigationMenuList>
+                    </NavigationMenuRoot>
                 </div>
+
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={handleLogout}
+                    disabled={loading}
+                    class="ml-2"
+                >
+                    <LogOut class="h-4 w-4 mr-1" />
+                    {loading ? "Logging out..." : "Logout"}
+                </Button>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0">
-            <div class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">
-                    Welcome to your dashboard!
+    <main class="container mx-auto px-4 py-8 lg:px-8">
+        <div class="space-y-8">
+            <div class="space-y-2">
+                <h1 class="text-3xl font-bold tracking-tight">Welcome back!</h1>
+                <p class="text-muted-foreground">
+                    Manage your exams and access your information.
+                </p>
+            </div>
+
+            {#if showLoginAlert}
+                <Alert class="border-green-200 bg-green-50">
+                    <CheckCircle2Icon color="#016630" />
+                    <AlertTitle class="text-green-800"
+                        >Login Successful</AlertTitle
+                    >
+                    <AlertDescription class="text-green-700">
+                        Your session is active. You can now access your data.
+                    </AlertDescription>
+                </Alert>
+            {/if}
+
+            <section class="space-y-4">
+                <h2 class="text-2xl font-semibold tracking-tight">
+                    Quick Actions
                 </h2>
 
-                {#if showLoginAlert}
-                    <div
-                        class="bg-green-50 border border-green-200 rounded-md p-4"
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <Card
+                        class="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20"
                     >
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg
-                                    class="h-5 w-5 text-green-400"
-                                    fill="currentColor"
-                                    viewBox="0 0 20 20"
+                        <CardContent>
+                            <div class="flex items-center space-x-2 gap-2">
+                                <div
+                                    class="rounded-lg bg-blue-100 p-2 dark:bg-blue-900/20"
                                 >
-                                    <path
-                                        fill-rule="evenodd"
-                                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                                        clip-rule="evenodd"
+                                    <BookOpen
+                                        class="h-5 w-5 text-blue-600 dark:text-blue-400"
                                     />
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-green-800">
-                                    Login Successful
-                                </h3>
-                                <p class="text-sm text-green-700 mt-1">
-                                    Your session is active. You can now access
-                                    your data.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                {/if}
-
-                <div class="mt-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">
-                        Quick Actions
-                    </h3>
-                    <div
-                        class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                    >
-                        <a
-                            href="/exams"
-                            class="block p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200"
-                        >
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0">
-                                    <svg
-                                        class="h-8 w-8 text-blue-600"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                    </svg>
                                 </div>
-                                <div class="ml-4">
-                                    <h4
-                                        class="text-lg font-medium text-gray-900"
-                                    >
+                                <div>
+                                    <CardTitle class="text-lg">
                                         Search Exams
-                                    </h4>
-                                    <p class="text-sm text-gray-500">
+                                    </CardTitle>
+                                    <CardDescription>
                                         Find exams by date range
-                                    </p>
+                                    </CardDescription>
                                 </div>
                             </div>
-                        </a>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
+            </section>
 
-                <div class="mt-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">
-                        Session Information
-                    </h3>
-                    <dl class="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-2">
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">
-                                School
-                            </dt>
-                            <dd class="text-sm text-gray-900">{schoolName}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-sm font-medium text-gray-500">
-                                Session ID
-                            </dt>
-                            <dd class="text-sm text-gray-900">
-                                <button
-                                    type="button"
-                                    class="font-mono cursor-pointer hover:bg-gray-100 rounded transition-colors"
-                                    on:click={() =>
+            <Separator />
+
+            <section class="space-y-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-2xl">
+                            Session Information
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent class="space-y-4">
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="flex flex-col gap-2">
+                                <Label
+                                    class="text-sm font-medium text-muted-foreground"
+                                >
+                                    School
+                                </Label>
+                                <div class="flex items-center space-x-2">
+                                    <School
+                                        class="h-4 w-4 text-muted-foreground"
+                                    />
+                                    <span class="text-sm font-medium"
+                                        >{schoolName}</span
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <Label
+                                    class="text-sm font-medium text-muted-foreground"
+                                >
+                                    Session ID
+                                </Label>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-auto p-0 font-mono text-left justify-start"
+                                    onclick={() =>
                                         (showFullSessionId =
                                             !showFullSessionId)}
-                                    title="Click to toggle full session ID"
                                 >
                                     {showFullSessionId
                                         ? sessionId
                                         : `${sessionId.substring(0, 8)}...`}
-                                </button>
-                            </dd>
+                                </Button>
+                            </div>
                         </div>
-                    </dl>
-                </div>
-            </div>
+                    </CardContent>
+                </Card>
+            </section>
         </div>
     </main>
 </div>
