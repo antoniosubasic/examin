@@ -39,7 +39,7 @@
     });
 </script>
 
-<div class="min-h-screen">
+<div class="min-h-[100dvh]">
     <Navbar />
 
     <main class="container mx-auto px-4 py-8 lg:px-8">
