@@ -90,8 +90,8 @@
                 if (response.status === 401) {
                     error = "Session expired. Please log in again.";
                     toast.error(error);
-                    authStore.logout();
                     setTimeout(() => {
+                        authStore.logout();
                         goto("/");
                     }, 2000);
                     return;
