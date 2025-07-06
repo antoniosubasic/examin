@@ -10,7 +10,7 @@
 				secondary:
 					"bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90 border-transparent",
 				destructive:
-					"bg-destructive/20 text-destructive [a&]:hover:bg-destructive/30 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 border-transparent",
+					"bg-destructive/20 text-destructive dark:text-destructive/100 [a&]:hover:bg-destructive/30 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/20 border-transparent",
 				outline: "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
 			},
 		},
