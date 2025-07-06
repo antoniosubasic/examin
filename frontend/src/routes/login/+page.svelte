@@ -88,7 +88,7 @@
     }
 </script>
 
-<div class="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+<div class="min-h-[100dvh] flex items-center justify-center px-4 sm:px-6 lg:px-8">
     <div class="max-w-md w-full space-y-6">
         <Button variant="ghost" onclick={goBack}>
             <ChevronLeft />

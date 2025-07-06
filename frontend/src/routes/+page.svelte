@@ -69,7 +69,7 @@
     }
 </script>
 
-<div class="min-h-screen flex items-center justify-center px-4 py-12">
+<div class="min-h-[100dvh] flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-md space-y-8">
         <div class="text-center">
             <h1 class="text-4xl font-bold tracking-tight">Find Your School</h1>
