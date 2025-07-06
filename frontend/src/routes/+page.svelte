@@ -5,13 +5,11 @@
     import { Card, CardContent } from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
-    import { Alert, AlertDescription } from "$lib/components/ui/alert";
-    import { AlertCircle } from "@lucide/svelte";
+    import { toast } from "svelte-sonner";
 
     let searchQuery = "";
     let schools: School[] = [];
     let loading = false;
-    let error = "";
 
     onMount(() => {
         if (localStorage.getItem("sessionId") || "") {
@@ -21,13 +19,12 @@
 
     async function searchSchools() {
         if (!searchQuery.trim()) {
-            error = "Please enter a search query";
+            toast.error("Please enter a search query");
             return;
         }
 
         loading = true;
         schools = [];
-        error = "";
 
         try {
             const response = await fetch(
@@ -40,7 +37,7 @@
                         .json()
                         .then((res) => res.error === "too many results")
                 ) {
-                    error = "Too many results, please refine your search.";
+                    toast.error("Too many results, please refine your search.");
                     return;
                 }
 
@@ -48,8 +45,11 @@
             }
 
             schools = await response.json();
+            if (schools.length === 0) {
+                toast.info("No schools found matching your query.");
+            }
         } catch (err) {
-            error = "Failed to search schools. Please try again.";
+            toast.error("Failed to search schools. Please try again.");
             console.error("Search error:", err);
         } finally {
             loading = false;
@@ -88,13 +88,6 @@
                         </Button>
                     </div>
                 </div>
-
-                {#if error}
-                    <Alert variant="destructive">
-                        <AlertCircle />
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                {/if}
 
                 {#if schools.length > 0}
                     <div class="space-y-2 max-h-64 overflow-y-auto">

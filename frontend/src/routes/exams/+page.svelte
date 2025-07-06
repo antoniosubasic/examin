@@ -13,7 +13,6 @@
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
     import { Badge } from "$lib/components/ui/badge";
-    import { Alert, AlertDescription } from "$lib/components/ui/alert";
     import {
         Table,
         TableBody,
@@ -29,7 +28,6 @@
     import { Navbar } from "$lib/components/navbar";
 
     let searching = false;
-    let error = "";
     let startDate = "";
     let endDate = "";
     let exams: Exam[] = [];
@@ -57,19 +55,16 @@
 
     async function searchExams() {
         if (!startDate || !endDate) {
-            error = "Please select both start and end dates";
-            toast.error(error);
+            toast.error("Please select both start and end dates");
             return;
         }
 
         if (new Date(startDate) > new Date(endDate)) {
-            error = "Start date must be before end date";
-            toast.error(error);
+            toast.error("Start date must be before end date");
             return;
         }
 
         searching = true;
-        error = "";
         exams = [];
 
         try {
@@ -88,8 +83,7 @@
             if (!response.ok) {
                 const errorData = await response.json();
                 if (response.status === 401) {
-                    error = "Session expired. Please log in again.";
-                    toast.error(error);
+                    toast.error("Session expired. Please log in again.");
                     setTimeout(() => {
                         authStore.logout();
                         goto("/");
@@ -102,12 +96,12 @@
             }
 
             exams = await response.json();
-            toast.success(
-                `Found ${exams.length} ${exams.length === 1 ? "exam" : "exams"}`
-            );
+            const message = `Found ${exams.length} ${exams.length === 1 ? "exam" : "exams"}`;
+            exams.length === 0 ? toast.info(message) : toast.success(message);
         } catch (err) {
-            error = `Failed to search exams: ${err instanceof Error ? err.message : "Unknown error"}`;
-            toast.error(error);
+            toast.error(
+                `Failed to search exams: ${err instanceof Error ? err.message : "Unknown error"}`
+            );
             console.error("Search error:", err);
         } finally {
             searching = false;
@@ -251,12 +245,6 @@
                             </Button>
                         </div>
                     </div>
-
-                    {#if error}
-                        <Alert variant="destructive" class="mt-4">
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    {/if}
                 </CardContent>
             </Card>
 
@@ -294,10 +282,14 @@
                             <TableHeader>
                                 <TableRow>
                                     <TableHead class="text-lg">Exam</TableHead>
-                                    <TableHead class="text-lg">Subject</TableHead>
+                                    <TableHead class="text-lg"
+                                        >Subject</TableHead
+                                    >
                                     <TableHead class="text-lg">Date</TableHead>
                                     <TableHead class="text-lg">Time</TableHead>
-                                    <TableHead class="text-lg">Description</TableHead>
+                                    <TableHead class="text-lg"
+                                        >Description</TableHead
+                                    >
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -357,7 +349,7 @@
                         </Table>
                     </CardContent>
                 </Card>
-            {:else if !searching && !error && startDate && endDate}
+            {:else if !searching && startDate && endDate}
                 <Card>
                     <CardContent class="text-center py-12">
                         <FileTextIcon

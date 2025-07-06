@@ -9,19 +9,14 @@
         CardHeader,
         CardTitle,
     } from "$lib/components/ui/card";
-    import {
-        Alert,
-        AlertDescription,
-        AlertTitle,
-    } from "$lib/components/ui/alert";
     import { Separator } from "$lib/components/ui/separator";
     import { Label } from "$lib/components/ui/label";
-    import { BookOpen, CheckCircle2Icon, School } from "@lucide/svelte";
+    import { BookOpen, School } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
     import { Navbar } from "$lib/components/navbar";
+    import { toast } from "svelte-sonner";
 
     let showFullSessionId = false;
-    let showLoginAlert = false;
 
     $: ({ sessionId, schoolName, isAuthenticated } = $authStore);
 
@@ -29,7 +24,7 @@
         authStore.init();
 
         if (localStorage.getItem("justLoggedIn") === "true") {
-            showLoginAlert = true;
+            toast.success("Login successful! Welcome back.");
             localStorage.removeItem("justLoggedIn");
         }
 
@@ -50,16 +45,6 @@
                     Manage your exams and access your information.
                 </p>
             </div>
-
-            {#if showLoginAlert}
-                <Alert>
-                    <CheckCircle2Icon />
-                    <AlertTitle>Login Successful</AlertTitle>
-                    <AlertDescription>
-                        Your session is active. You can now access your data.
-                    </AlertDescription>
-                </Alert>
-            {/if}
 
             <section class="space-y-4">
                 <h2 class="text-2xl font-semibold tracking-tight">

@@ -12,16 +12,15 @@
     } from "$lib/components/ui/card";
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
-    import { Alert, AlertDescription } from "$lib/components/ui/alert";
-    import { ChevronLeft, AlertCircleIcon } from "@lucide/svelte";
+    import { ChevronLeft } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
+    import { toast } from "svelte-sonner";
 
     let schoolName = "";
     let schoolLoginName = "";
     let username = "";
     let password = "";
     let loading = false;
-    let error = "";
 
     onMount(() => {
         if (localStorage.getItem("sessionId") || "") {
@@ -38,12 +37,11 @@
 
     async function handleLogin() {
         if (!username.trim() || !password.trim()) {
-            error = "Please enter both username and password";
+            toast.error("Please enter both username and password");
             return;
         }
 
         loading = true;
-        error = "";
 
         try {
             const response = await fetch("/api/auth/login", {
@@ -65,12 +63,13 @@
                 localStorage.setItem("justLoggedIn", "true");
                 goto("/dashboard");
             } else {
-                error =
+                toast.error(
                     result.message ||
-                    "Login failed. Please check your credentials.";
+                        "Login failed. Please check your credentials."
+                );
             }
         } catch (err) {
-            error = "Login failed. Please try again.";
+            toast.error("Login failed. Please try again.");
             console.error("Login error:", err);
         } finally {
             loading = false;
@@ -129,13 +128,6 @@
                             required
                         />
                     </div>
-
-                    {#if error}
-                        <Alert variant="destructive">
-                            <AlertCircleIcon />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    {/if}
 
                     <Button
                         type="submit"
