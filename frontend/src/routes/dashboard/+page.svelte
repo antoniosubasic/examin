@@ -71,6 +71,7 @@
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <Card
                         class="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20"
+                        onclick={() => goto("/exams")}
                     >
                         <CardContent>
                             <div class="flex items-center space-x-2 gap-2">
