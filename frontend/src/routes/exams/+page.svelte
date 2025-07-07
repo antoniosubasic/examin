@@ -2,7 +2,7 @@
     import { onMount } from "svelte";
     import { goto } from "$app/navigation";
     import { toast } from "svelte-sonner";
-    import { Button } from "$lib/components/ui/button";
+    import { Button, buttonVariants } from "$lib/components/ui/button";
     import {
         Card,
         CardContent,
@@ -10,8 +10,6 @@
         CardHeader,
         CardTitle,
     } from "$lib/components/ui/card";
-    import { Input } from "$lib/components/ui/input";
-    import { Label } from "$lib/components/ui/label";
     import { Badge } from "$lib/components/ui/badge";
     import {
         Table,
@@ -23,16 +21,48 @@
     } from "$lib/components/ui/table";
     import { Skeleton } from "$lib/components/ui/skeleton";
     import { Separator } from "$lib/components/ui/separator";
-    import { FileTextIcon } from "@lucide/svelte";
+    import { RangeCalendar } from "$lib/components/ui/range-calendar";
+    import {
+        DateFormatter,
+        getLocalTimeZone,
+        parseDate,
+        parseTime,
+        today,
+    } from "@internationalized/date";
+    import type { DateRange } from "bits-ui";
+    import { cn } from "$lib/utils";
+    import {
+        Popover,
+        PopoverTrigger,
+        PopoverContent,
+    } from "$lib/components/ui/popover";
+    import { FileTextIcon, CalendarIcon } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
     import { Navbar } from "$lib/components/navbar";
 
     let searching = false;
-    let startDate = "";
-    let endDate = "";
+    let dateRange: DateRange = {
+        start: today(getLocalTimeZone()),
+        end: today(getLocalTimeZone()).add({ months: 1 }),
+    };
     let exams: Exam[] = [];
 
-    $: ({ sessionId } = $authStore);
+    const userLocale =
+        navigator.language || navigator.languages?.[0] || "en-US";
+    const df = new DateFormatter(userLocale, {
+        dateStyle: "medium",
+    });
+    const tf = new DateFormatter(userLocale, {
+        timeStyle: "short",
+        hour12: false,
+    });
+
+    const timeToDate = (timeStr: string) => {
+        const time = parseTime(timeStr);
+        const date = new Date();
+        date.setHours(time.hour, time.minute, time.second || 0, 0);
+        return date;
+    };
 
     onMount(() => {
         authStore.init();
@@ -41,25 +71,15 @@
             goto("/");
             return;
         }
-
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const firstDay = `${year}-${month}-01`;
-        const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
-        const lastDayFormatted = `${year}-${month}-${String(lastDay).padStart(2, "0")}`;
-
-        startDate = firstDay;
-        endDate = lastDayFormatted;
     });
 
     async function searchExams() {
-        if (!startDate || !endDate) {
+        if (!dateRange.start || !dateRange.end) {
             toast.error("Please select both start and end dates");
             return;
         }
 
-        if (new Date(startDate) > new Date(endDate)) {
+        if (dateRange.start > dateRange.end) {
             toast.error("Start date must be before end date");
             return;
         }
@@ -74,9 +94,9 @@
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    sessionId: sessionId,
-                    startDate: startDate,
-                    endDate: endDate,
+                    sessionId: $authStore.sessionId,
+                    startDate: dateRange.start.toString(),
+                    endDate: dateRange.end.toString(),
                 }),
             });
 
@@ -108,14 +128,6 @@
         }
     }
 
-    function formatDate(dateString: string): string {
-        return new Date(dateString + "T00:00:00").toLocaleDateString();
-    }
-
-    function formatTime(timeString: string): string {
-        return timeString.substring(0, 5);
-    }
-
     function getExamTypeVariant(
         type: string
     ): "default" | "secondary" | "destructive" | "outline" {
@@ -134,55 +146,45 @@
             return;
         }
 
-        const headers = "Subject,Description,Start Date,Start Time,End Time";
-        const csvContent = [headers];
-
-        exams.forEach((exam) => {
-            const subject = exam.subject || "";
-            const description = exam.text || exam.name || "";
-
-            const examDate = new Date(exam.examDate + "T00:00:00");
-            const formattedDate = examDate.toLocaleDateString("en-US");
-
-            const formatTime = (timeStr: string) => {
-                const parts = timeStr.split(":");
-                const hours = parseInt(parts[0], 10);
-                const minutes = parseInt(parts[1], 10);
-
-                const date = new Date();
-                date.setHours(hours, minutes, 0, 0);
-
-                return date.toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                });
-            };
-
-            const startTime = formatTime(exam.startTime);
-            const endTime = formatTime(exam.endTime);
-
-            const escapeCsvValue = (value: string) => {
-                if (
-                    value.includes(",") ||
-                    value.includes('"') ||
-                    value.includes("\n")
-                ) {
-                    return `"${value.replace(/"/g, '""')}"`;
-                }
-                return value;
-            };
-
-            const row = [
-                escapeCsvValue(subject),
-                escapeCsvValue(description),
-                formattedDate,
-                startTime,
-                endTime,
-            ].join(",");
-
-            csvContent.push(row);
+        const df = new DateFormatter("en-US", {
+            day: "numeric",
+            month: "numeric",
+            year: "numeric",
         });
+
+        const tf = new DateFormatter("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+        });
+
+        const escapeCsvValue = (value: string) => {
+            if (
+                value.includes(",") ||
+                value.includes('"') ||
+                value.includes("\n")
+            ) {
+                return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+        };
+
+        const csvContent = [
+            "Subject,Description,Start Date,Start Time,End Time",
+        ];
+        csvContent.push(
+            ...exams.map((exam) =>
+                [
+                    escapeCsvValue(exam.subject || ""),
+                    escapeCsvValue(exam.text || exam.name || ""),
+                    df.format(
+                        parseDate(exam.examDate).toDate(getLocalTimeZone())
+                    ),
+                    tf.format(timeToDate(exam.startTime)),
+                    tf.format(timeToDate(exam.endTime)),
+                ].join(",")
+            )
+        );
 
         const csvString = csvContent.join("\n");
         const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
@@ -214,32 +216,46 @@
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                        <div class="space-y-2">
-                            <Label for="startDate">Start Date</Label>
-                            <Input
-                                id="startDate"
-                                type="date"
-                                bind:value={startDate}
-                                disabled={searching}
-                            />
-                        </div>
-
-                        <div class="space-y-2">
-                            <Label for="endDate">End Date</Label>
-                            <Input
-                                id="endDate"
-                                type="date"
-                                bind:value={endDate}
-                                disabled={searching}
-                            />
-                        </div>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <Popover>
+                            <PopoverTrigger
+                                class={cn(
+                                    buttonVariants({ variant: "outline" })
+                                )}
+                            >
+                                <CalendarIcon class="mr-2 size-4" />
+                                {#if dateRange && dateRange.start}
+                                    {df.format(
+                                        dateRange.start.toDate(
+                                            getLocalTimeZone()
+                                        )
+                                    )}
+                                    {#if dateRange.end}
+                                        - {df.format(
+                                            dateRange.end.toDate(
+                                                getLocalTimeZone()
+                                            )
+                                        )}
+                                    {/if}
+                                {:else}
+                                    Pick a date
+                                {/if}
+                            </PopoverTrigger>
+                            <PopoverContent class="w-auto p-0">
+                                <RangeCalendar
+                                    bind:value={dateRange}
+                                    disabled={searching}
+                                />
+                            </PopoverContent>
+                        </Popover>
 
                         <div class="flex items-end">
                             <Button
                                 class="w-full"
                                 onclick={searchExams}
-                                disabled={searching || !startDate || !endDate}
+                                disabled={searching ||
+                                    !dateRange.start ||
+                                    !dateRange.end}
                             >
                                 {searching ? "Searching..." : "Search Exams"}
                             </Button>
@@ -321,7 +337,11 @@
                                         </TableCell>
                                         <TableCell>
                                             <span class="text-sm">
-                                                {formatDate(exam.examDate)}
+                                                {df.format(
+                                                    parseDate(
+                                                        exam.examDate
+                                                    ).toDate(getLocalTimeZone())
+                                                )}
                                             </span>
                                         </TableCell>
                                         <TableCell>
@@ -329,10 +349,16 @@
                                                 class="text-sm flex flex-col gap-1"
                                             >
                                                 <p>
-                                                    {formatTime(exam.startTime)}
+                                                    {tf.format(
+                                                        timeToDate(
+                                                            exam.startTime
+                                                        )
+                                                    )}
                                                 </p>
                                                 <p>
-                                                    {formatTime(exam.endTime)}
+                                                    {tf.format(
+                                                        timeToDate(exam.endTime)
+                                                    )}
                                                 </p>
                                             </div>
                                         </TableCell>
@@ -349,7 +375,7 @@
                         </Table>
                     </CardContent>
                 </Card>
-            {:else if !searching && startDate && endDate}
+            {:else if !searching && dateRange.start && dateRange.end}
                 <Card>
                     <CardContent class="text-center py-12">
                         <FileTextIcon
