@@ -105,8 +105,8 @@
             {/if}
         </div>
 
-        {#if isAuthenticated}
-            <div class="md:hidden">
+        <div class="md:hidden">
+            {#if isAuthenticated}
                 <Button
                     variant="outline"
                     size="icon"
@@ -119,45 +119,43 @@
                         <Menu class="h-6 w-6" />
                     {/if}
                 </Button>
-            </div>
-        {/if}
+            {:else}
+                <LightDarkToggle />
+            {/if}
+        </div>
     </div>
 
-    {#if mobileMenuOpen}
+    {#if mobileMenuOpen && isAuthenticated}
         <div class="md:hidden border-t">
-            {#if isAuthenticated}
-                <div class="px-2 pt-2 pb-3 space-y-1">
-                    {#each linkData as link}
-                        <a
-                            href={link.href}
-                            onclick={() => (mobileMenuOpen = false)}
-                            class={[
-                                `block px-3 py-2 rounded-md text-base font-medium transition-colors
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                {#each linkData as link}
+                    <a
+                        href={link.href}
+                        onclick={() => (mobileMenuOpen = false)}
+                        class={[
+                            `block px-3 py-2 rounded-md text-base font-medium transition-colors
                                 hover:bg-accent hover:text-accent-foreground`,
-                                link.isActive
-                                    ? "bg-accent text-accent-foreground"
-                                    : "text-muted-foreground",
-                            ]}
-                        >
-                            {link.label}
-                        </a>
-                    {/each}
-                </div>
-            {/if}
+                            link.isActive
+                                ? "bg-accent text-accent-foreground"
+                                : "text-muted-foreground",
+                        ]}
+                    >
+                        {link.label}
+                    </a>
+                {/each}
+            </div>
 
             <div class="px-2 pb-3 border-t pt-3 flex items-center space-x-2">
                 <LightDarkToggle />
-                {#if isAuthenticated}
-                    <Button
-                        variant="outline"
-                        onclick={handleLogout}
-                        disabled={loading}
-                        class="flex-1"
-                    >
-                        <LogOut class="h-4 w-4" />
-                        {loading ? "Logging out..." : "Logout"}
-                    </Button>
-                {/if}
+                <Button
+                    variant="outline"
+                    onclick={handleLogout}
+                    disabled={loading}
+                    class="flex-1"
+                >
+                    <LogOut class="h-4 w-4" />
+                    {loading ? "Logging out..." : "Logout"}
+                </Button>
             </div>
         </div>
     {/if}

@@ -62,7 +62,7 @@
         <h1 class="text-4xl font-bold tracking-tight">Find Your School</h1>
     </div>
 
-    <Card class="w-lg">
+    <Card class="md:w-lg">
         <CardContent class="space-y-4">
             <div class="space-y-2">
                 <Label for="search">School Name or Location</Label>

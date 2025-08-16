@@ -88,13 +88,15 @@
 </script>
 
 <div class="w-full flex items-center justify-center">
-    <div class="space-y-4">
-        <Button variant="ghost" onclick={goBack}>
-            <ChevronLeft />
-            Back to search
-        </Button>
+    <div class="w-full flex flex-col items-center justify-center space-y-4">
+        <div class="w-full md:w-lg">
+            <Button variant="ghost" onclick={goBack}>
+                <ChevronLeft />
+                Back to search
+            </Button>
+        </div>
 
-        <Card class="w-lg">
+        <Card class="w-full md:w-lg">
             <CardHeader>
                 <CardTitle class="text-[1.75rem]">Login</CardTitle>
                 <CardDescription class="text-base">
