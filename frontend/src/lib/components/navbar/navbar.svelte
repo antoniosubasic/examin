@@ -13,17 +13,20 @@
     import { authStore } from "$lib/stores/auth";
     import { LightDarkToggle } from "$lib/components/light-dark-toggle";
 
-    let loading = false;
-    let mobileMenuOpen = false;
+    let loading = $state(false);
+    let mobileMenuOpen = $state(false);
 
-    $: ({ sessionId, isAuthenticated } = $authStore);
-    $: currentPath = page.url.pathname;
+    const { sessionId, isAuthenticated } = $derived($authStore);
+    const currentPath = $derived(page.url.pathname);
 
-    $: linkData = ["/dashboard", "/exams"].map((link) => ({
-        href: link,
-        label: `${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`,
-        isActive: currentPath === link || currentPath.startsWith(`${link}/`),
-    }));
+    const linkData = $derived(
+        ["/dashboard", "/exams"].map((link) => ({
+            href: link,
+            label: `${link.substring(1).charAt(0).toUpperCase()}${link.substring(2)}`,
+            isActive:
+                currentPath === link || currentPath.startsWith(`${link}/`),
+        }))
+    );
 
     async function handleLogout() {
         loading = true;

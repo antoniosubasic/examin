@@ -39,12 +39,14 @@
     import { FileTextIcon, CalendarIcon } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
 
-    let searching = false;
-    let dateRange: DateRange = {
+    const { isAuthenticated } = $derived($authStore);
+
+    let searching = $state(false);
+    let dateRange: DateRange = $state({
         start: today(getLocalTimeZone()),
         end: today(getLocalTimeZone()).add({ months: 1 }),
-    };
-    let exams: Exam[] = [];
+    });
+    let exams: Exam[] = $state([]);
 
     const userLocale =
         navigator.language || navigator.languages?.[0] || "en-US";
@@ -66,7 +68,7 @@
     onMount(() => {
         authStore.init();
 
-        if (!$authStore.isAuthenticated) {
+        if (!isAuthenticated) {
             goto("/");
             return;
         }

@@ -7,9 +7,9 @@
     import { Label } from "$lib/components/ui/label";
     import { toast } from "svelte-sonner";
 
-    let searchQuery = "";
-    let schools: School[] = [];
-    let loading = false;
+    let searchQuery = $state("");
+    let schools: School[] = $state([]);
+    let loading = $state(false);
 
     onMount(() => {
         if (localStorage.getItem("sessionId") || "") {

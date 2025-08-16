@@ -15,9 +15,9 @@
     import { authStore } from "$lib/stores/auth";
     import { toast } from "svelte-sonner";
 
-    let showFullSessionId = false;
+    let showFullSessionId = $state(false);
 
-    $: ({ sessionId, schoolName } = $authStore);
+    const { sessionId, isAuthenticated, schoolName } = $derived($authStore);
 
     onMount(() => {
         authStore.init();
@@ -27,7 +27,7 @@
             localStorage.removeItem("justLoggedIn");
         }
 
-        if (!$authStore.isAuthenticated) {
+        if (!isAuthenticated) {
             goto("/");
         }
     });

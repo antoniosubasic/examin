@@ -16,11 +16,11 @@
     import { authStore } from "$lib/stores/auth";
     import { toast } from "svelte-sonner";
 
-    let schoolName = "";
-    let schoolLoginName = "";
-    let username = "";
-    let password = "";
-    let loading = false;
+    let schoolName = $state("");
+    let schoolLoginName = $state("");
+    let username = $state("");
+    let password = $state("");
+    let loading = $state(false);
 
     onMount(() => {
         if (localStorage.getItem("sessionId") || "") {
@@ -102,7 +102,7 @@
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <form on:submit|preventDefault={handleLogin} class="space-y-4">
+                <form onsubmit={handleLogin} class="space-y-4">
                     <div class="space-y-2">
                         <Label for="username">Username</Label>
                         <Input
