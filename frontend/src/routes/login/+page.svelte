@@ -15,7 +15,6 @@
     import { ChevronLeft } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
     import { toast } from "svelte-sonner";
-    import { LightDarkToggle } from "$lib/components/light-dark-toggle";
 
     let schoolName = "";
     let schoolLoginName = "";
@@ -88,20 +87,14 @@
     }
 </script>
 
-<div
-    class="min-h-[100dvh] flex items-center justify-center px-4 sm:px-6 lg:px-8 relative"
->
-    <div class="absolute top-4 right-4">
-        <LightDarkToggle />
-    </div>
-
-    <div class="max-w-md w-full space-y-6">
+<div class="w-full flex items-center justify-center">
+    <div class="space-y-4">
         <Button variant="ghost" onclick={goBack}>
             <ChevronLeft />
             Back to search
         </Button>
 
-        <Card>
+        <Card class="w-lg">
             <CardHeader>
                 <CardTitle class="text-[1.75rem]">Login</CardTitle>
                 <CardDescription class="text-base">

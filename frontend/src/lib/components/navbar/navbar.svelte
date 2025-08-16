@@ -16,7 +16,7 @@
     let loading = false;
     let mobileMenuOpen = false;
 
-    $: ({ sessionId } = $authStore);
+    $: ({ sessionId, isAuthenticated } = $authStore);
     $: currentPath = page.url.pathname;
 
     $: linkData = ["/dashboard", "/exams"].map((link) => ({
@@ -48,19 +48,19 @@
     }
 </script>
 
-<header class="border-b">
-    <div class="container mx-auto px-4 lg:px-8">
-        <div class="flex h-16 items-center justify-between">
-            <div class="flex items-center">
-                <a
-                    class="flex items-center space-x-2 px-2 py-4 hover:cursor-pointer"
-                    href="/"
-                >
-                    <School class="h-6 w-6 text-primary" />
-                    <span class="text-xl font-semibold">Examin</span>
-                </a>
-            </div>
+<nav class="px-5 border-b">
+    <div class="flex h-16 items-center justify-between">
+        <div class="flex items-center">
+            <a
+                class="flex items-center space-x-2 px-2 py-4 hover:cursor-pointer"
+                href="/"
+            >
+                <School class="h-6 w-6 text-primary" />
+                <span class="text-xl font-semibold">Examin</span>
+            </a>
+        </div>
 
+        {#if isAuthenticated}
             <NavigationMenuRoot class="hidden md:flex">
                 <NavigationMenuList>
                     {#each linkData as link}
@@ -85,9 +85,11 @@
                     {/each}
                 </NavigationMenuList>
             </NavigationMenuRoot>
+        {/if}
 
-            <div class="hidden md:flex items-center space-x-2">
-                <LightDarkToggle />
+        <div class="hidden md:flex items-center space-x-2">
+            <LightDarkToggle />
+            {#if isAuthenticated}
                 <Button
                     variant="outline"
                     size="sm"
@@ -97,8 +99,10 @@
                     <LogOut class="h-4 w-4 mr-1" />
                     {loading ? "Logging out..." : "Logout"}
                 </Button>
-            </div>
+            {/if}
+        </div>
 
+        {#if isAuthenticated}
             <div class="md:hidden">
                 <Button
                     variant="outline"
@@ -113,10 +117,12 @@
                     {/if}
                 </Button>
             </div>
-        </div>
+        {/if}
+    </div>
 
-        {#if mobileMenuOpen}
-            <div class="md:hidden border-t">
+    {#if mobileMenuOpen}
+        <div class="md:hidden border-t">
+            {#if isAuthenticated}
                 <div class="px-2 pt-2 pb-3 space-y-1">
                     {#each linkData as link}
                         <a
@@ -134,23 +140,22 @@
                         </a>
                     {/each}
                 </div>
+            {/if}
 
-                <div
-                    class="px-2 pb-3 border-t pt-3 flex items-center space-x-2"
-                >
-                    <LightDarkToggle />
+            <div class="px-2 pb-3 border-t pt-3 flex items-center space-x-2">
+                <LightDarkToggle />
+                {#if isAuthenticated}
                     <Button
                         variant="outline"
-                        size="sm"
                         onclick={handleLogout}
                         disabled={loading}
                         class="flex-1"
                     >
-                        <LogOut class="h-4 w-4 mr-1" />
+                        <LogOut class="h-4 w-4" />
                         {loading ? "Logging out..." : "Logout"}
                     </Button>
-                </div>
+                {/if}
             </div>
-        {/if}
-    </div>
-</header>
+        </div>
+    {/if}
+</nav>

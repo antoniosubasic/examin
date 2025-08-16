@@ -38,7 +38,6 @@
     } from "$lib/components/ui/popover";
     import { FileTextIcon, CalendarIcon } from "@lucide/svelte";
     import { authStore } from "$lib/stores/auth";
-    import { Navbar } from "$lib/components/navbar";
 
     let searching = false;
     let dateRange: DateRange = {
@@ -203,193 +202,143 @@
     }
 </script>
 
-<div class="min-h-[100dvh] bg-background">
-    <Navbar />
+<div class="w-full md:mx-[4vw] xl:mx-[10vw] flex flex-col items-center gap-10">
+    <div class="flex flex-col justify-content gap-4">
+        <Popover>
+            <PopoverTrigger class={cn(buttonVariants({ variant: "outline" }))}>
+                <CalendarIcon class="mr-2 size-4" />
+                {#if dateRange && dateRange.start}
+                    {df.format(dateRange.start.toDate(getLocalTimeZone()))}
+                    {#if dateRange.end}
+                        - {df.format(dateRange.end.toDate(getLocalTimeZone()))}
+                    {/if}
+                {:else}
+                    Pick a date
+                {/if}
+            </PopoverTrigger>
+            <PopoverContent class="w-auto p-0">
+                <RangeCalendar bind:value={dateRange} disabled={searching} />
+            </PopoverContent>
+        </Popover>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div class="px-4 py-6 sm:px-0 space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Search Exams</CardTitle>
-                    <CardDescription>
-                        Find exams within a specific date range
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <Popover>
-                            <PopoverTrigger
-                                class={cn(
-                                    buttonVariants({ variant: "outline" })
-                                )}
-                            >
-                                <CalendarIcon class="mr-2 size-4" />
-                                {#if dateRange && dateRange.start}
-                                    {df.format(
-                                        dateRange.start.toDate(
-                                            getLocalTimeZone()
-                                        )
-                                    )}
-                                    {#if dateRange.end}
-                                        - {df.format(
-                                            dateRange.end.toDate(
+        <div class="flex items-end">
+            <Button
+                class="w-full"
+                onclick={searchExams}
+                disabled={searching || !dateRange.start || !dateRange.end}
+            >
+                {searching ? "Searching..." : "Search Exams"}
+            </Button>
+        </div>
+    </div>
+
+    <Card class="w-full">
+        {#if searching}
+            <CardHeader>
+                <CardTitle>
+                    <Skeleton class="h-6 w-32" />
+                </CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-4">
+                {#each Array(3) as _}
+                    <div class="space-y-2">
+                        <Skeleton class="h-4 w-full" />
+                        <Skeleton class="h-4 w-3/4" />
+                        <Skeleton class="h-4 w-1/2" />
+                    </div>
+                    <Separator />
+                {/each}
+            </CardContent>
+        {:else if exams.length > 0}
+            <CardHeader>
+                <div class="flex items-center justify-between">
+                    <CardTitle class="text-xl">
+                        Found {exams.length}
+                        {exams.length === 1 ? "exam" : "exams"}
+                    </CardTitle>
+                    <Button onclick={exportToCsv}>Export CSV</Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead class="text-lg">Exam</TableHead>
+                            <TableHead class="text-lg">Subject</TableHead>
+                            <TableHead class="text-lg">Date</TableHead>
+                            <TableHead class="text-lg">Time</TableHead>
+                            <TableHead class="text-lg">Description</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {#each exams as exam}
+                            <TableRow>
+                                <TableCell>
+                                    <div class="flex gap-3">
+                                        <span class="font-medium">
+                                            {exam.name || "Unnamed Exam"}
+                                        </span>
+                                        {#if exam.examType}
+                                            <Badge
+                                                variant={getExamTypeVariant(
+                                                    exam.examType
+                                                )}
+                                            >
+                                                {exam.examType}
+                                            </Badge>
+                                        {/if}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <span class="font-medium text-foreground">
+                                        {exam.subject || "—"}
+                                    </span>
+                                </TableCell>
+                                <TableCell>
+                                    <span class="text-sm">
+                                        {df.format(
+                                            parseDate(exam.examDate).toDate(
                                                 getLocalTimeZone()
                                             )
                                         )}
-                                    {/if}
-                                {:else}
-                                    Pick a date
-                                {/if}
-                            </PopoverTrigger>
-                            <PopoverContent class="w-auto p-0">
-                                <RangeCalendar
-                                    bind:value={dateRange}
-                                    disabled={searching}
-                                />
-                            </PopoverContent>
-                        </Popover>
-
-                        <div class="flex items-end">
-                            <Button
-                                class="w-full"
-                                onclick={searchExams}
-                                disabled={searching ||
-                                    !dateRange.start ||
-                                    !dateRange.end}
-                            >
-                                {searching ? "Searching..." : "Search Exams"}
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {#if searching}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>
-                            <Skeleton class="h-6 w-32" />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent class="space-y-4">
-                        {#each Array(3) as _}
-                            <div class="space-y-2">
-                                <Skeleton class="h-4 w-full" />
-                                <Skeleton class="h-4 w-3/4" />
-                                <Skeleton class="h-4 w-1/2" />
-                            </div>
-                            <Separator />
+                                    </span>
+                                </TableCell>
+                                <TableCell>
+                                    <div class="text-sm flex flex-col gap-1">
+                                        <p>
+                                            {tf.format(
+                                                timeToDate(exam.startTime)
+                                            )}
+                                        </p>
+                                        <p>
+                                            {tf.format(
+                                                timeToDate(exam.endTime)
+                                            )}
+                                        </p>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <span class="text-sm text-muted-foreground">
+                                        {exam.text || "—"}
+                                    </span>
+                                </TableCell>
+                            </TableRow>
                         {/each}
-                    </CardContent>
-                </Card>
-            {:else if exams.length > 0}
-                <Card>
-                    <CardHeader>
-                        <div class="flex items-center justify-between">
-                            <CardTitle class="text-xl">
-                                Found {exams.length}
-                                {exams.length === 1 ? "exam" : "exams"}
-                            </CardTitle>
-                            <Button onclick={exportToCsv}>Export CSV</Button>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead class="text-lg">Exam</TableHead>
-                                    <TableHead class="text-lg"
-                                        >Subject</TableHead
-                                    >
-                                    <TableHead class="text-lg">Date</TableHead>
-                                    <TableHead class="text-lg">Time</TableHead>
-                                    <TableHead class="text-lg"
-                                        >Description</TableHead
-                                    >
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {#each exams as exam}
-                                    <TableRow>
-                                        <TableCell>
-                                            <div class="flex gap-3">
-                                                <span class="font-medium">
-                                                    {exam.name ||
-                                                        "Unnamed Exam"}
-                                                </span>
-                                                {#if exam.examType}
-                                                    <Badge
-                                                        variant={getExamTypeVariant(
-                                                            exam.examType
-                                                        )}
-                                                    >
-                                                        {exam.examType}
-                                                    </Badge>
-                                                {/if}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span
-                                                class="font-medium text-foreground"
-                                            >
-                                                {exam.subject || "—"}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span class="text-sm">
-                                                {df.format(
-                                                    parseDate(
-                                                        exam.examDate
-                                                    ).toDate(getLocalTimeZone())
-                                                )}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div
-                                                class="text-sm flex flex-col gap-1"
-                                            >
-                                                <p>
-                                                    {tf.format(
-                                                        timeToDate(
-                                                            exam.startTime
-                                                        )
-                                                    )}
-                                                </p>
-                                                <p>
-                                                    {tf.format(
-                                                        timeToDate(exam.endTime)
-                                                    )}
-                                                </p>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span
-                                                class="text-sm text-muted-foreground"
-                                            >
-                                                {exam.text || "—"}
-                                            </span>
-                                        </TableCell>
-                                    </TableRow>
-                                {/each}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            {:else if !searching && dateRange.start && dateRange.end}
-                <Card>
-                    <CardContent class="text-center py-12">
-                        <FileTextIcon
-                            class="mx-auto h-12 w-12 text-muted-foreground mb-4"
-                        />
-                        <CardTitle class="text-muted-foreground"
-                            >No exams found</CardTitle
-                        >
-                        <CardDescription class="mt-2">
-                            No exams were found for the selected date range.
-                        </CardDescription>
-                    </CardContent>
-                </Card>
-            {/if}
-        </div>
-    </main>
+                    </TableBody>
+                </Table>
+            </CardContent>
+        {:else if !searching && dateRange.start && dateRange.end}
+            <CardContent class="text-center py-12">
+                <FileTextIcon
+                    class="mx-auto h-12 w-12 text-muted-foreground mb-4"
+                />
+                <CardTitle class="text-muted-foreground"
+                    >No exams found</CardTitle
+                >
+                <CardDescription class="mt-2">
+                    No exams were found for the selected date range.
+                </CardDescription>
+            </CardContent>
+        {/if}
+    </Card>
 </div>

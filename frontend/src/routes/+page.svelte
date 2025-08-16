@@ -6,7 +6,6 @@
     import { Input } from "$lib/components/ui/input";
     import { Label } from "$lib/components/ui/label";
     import { toast } from "svelte-sonner";
-    import { LightDarkToggle } from "$lib/components/light-dark-toggle";
 
     let searchQuery = "";
     let schools: School[] = [];
@@ -58,68 +57,60 @@
     }
 </script>
 
-<div
-    class="min-h-[100dvh] flex items-center justify-center px-4 py-12 relative"
->
-    <div class="absolute top-4 right-4">
-        <LightDarkToggle />
+<div class="w-full flex flex-col gap-5 items-center justify-center">
+    <div class="text-center">
+        <h1 class="text-4xl font-bold tracking-tight">Find Your School</h1>
     </div>
 
-    <div class="w-full max-w-md space-y-8">
-        <div class="text-center">
-            <h1 class="text-4xl font-bold tracking-tight">Find Your School</h1>
-        </div>
-
-        <Card>
-            <CardContent class="space-y-4">
-                <div class="space-y-2">
-                    <Label for="search">School Name or Location</Label>
-                    <div class="flex gap-2">
-                        <Input
-                            id="search"
-                            type="text"
-                            bind:value={searchQuery}
-                            placeholder="Enter School Name or Location..."
-                            disabled={loading}
-                            class="flex-1"
-                            onkeypress={(event) => {
-                                if (event.key === "Enter") searchSchools();
-                            }}
-                        />
-                        <Button
-                            disabled={loading || !searchQuery.trim()}
-                            class="px-6"
-                            onclick={searchSchools}
-                        >
-                            {loading ? "Searching..." : "Search"}
-                        </Button>
-                    </div>
+    <Card class="w-lg">
+        <CardContent class="space-y-4">
+            <div class="space-y-2">
+                <Label for="search">School Name or Location</Label>
+                <div class="flex gap-2">
+                    <Input
+                        id="search"
+                        type="text"
+                        bind:value={searchQuery}
+                        placeholder="Enter School Name or Location..."
+                        disabled={loading}
+                        class="flex-1"
+                        onkeypress={(event) => {
+                            if (event.key === "Enter") searchSchools();
+                        }}
+                    />
+                    <Button
+                        disabled={loading || !searchQuery.trim()}
+                        class="px-6"
+                        onclick={searchSchools}
+                    >
+                        {loading ? "Searching..." : "Search"}
+                    </Button>
                 </div>
+            </div>
 
-                {#if schools.length > 0}
-                    <div class="space-y-2 max-h-64 overflow-y-auto">
-                        {#each schools as school}
-                            <Button
-                                variant="outline"
-                                class="w-full justify-start h-auto p-4 text-left"
-                                onclick={() =>
-                                    goto(
-                                        `/login?school=${encodeURIComponent(school.loginName)}&name=${encodeURIComponent(school.displayName)}`
-                                    )}
-                            >
-                                <div class="flex flex-col items-start">
-                                    <div class="font-medium">
-                                        {school.displayName}
-                                    </div>
-                                    <div class="text-sm text-slate-500">
-                                        {school.loginName}
-                                    </div>
+            {#if schools.length > 0}
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    {#each schools as school}
+                        <Button
+                            variant="outline"
+                            class="w-full justify-start h-auto p-4 text-left"
+                            onclick={() =>
+                                goto(
+                                    `/login?school=${encodeURIComponent(school.loginName)}&name=${encodeURIComponent(school.displayName)}`
+                                )}
+                        >
+                            <div class="flex flex-col items-start">
+                                <div class="font-medium">
+                                    {school.displayName}
                                 </div>
-                            </Button>
-                        {/each}
-                    </div>
-                {/if}
-            </CardContent>
-        </Card>
-    </div>
+                                <div class="text-sm text-slate-500">
+                                    {school.loginName}
+                                </div>
+                            </div>
+                        </Button>
+                    {/each}
+                </div>
+            {/if}
+        </CardContent>
+    </Card>
 </div>
